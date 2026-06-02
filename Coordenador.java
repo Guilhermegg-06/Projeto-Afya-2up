@@ -1,6 +1,6 @@
 package Projeto-Afya-2up;
 
-public class Coordenador extends Pessoa{
+public class Coordenador extends Pessoa implements CriadorDeEventos{
 
     private static int proxIDCoord = 1;
     private int iDCoord;
@@ -12,6 +12,11 @@ public class Coordenador extends Pessoa{
 
         public int getIdCoord() {
         return iDCoord;
+    }
+
+        @Override
+    private CriarEventos (){
+        
     }
 
 }
