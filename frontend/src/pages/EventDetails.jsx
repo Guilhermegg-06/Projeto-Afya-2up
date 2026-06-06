@@ -10,12 +10,16 @@ import {
     UserRound,
     Users,
 } from "lucide-react";
+import FavoriteToggle from "../components/FavoriteToggle";
 import Loader from "../components/Loader";
+import { readFavorites, updateFavorite } from "../services/favorites";
 import {
     criarInscricao,
     listarAtividadesPorEvento,
     obterEvento,
 } from "../services/api";
+
+const ACTIVITY_FAVORITES_KEY = "afya:favoritos:atividades";
 
 function normalizeActivity(activity) {
     return {
@@ -64,6 +68,9 @@ export default function EventDetails() {
     const { id } = useParams();
     const [event, setEvent] = useState(null);
     const [activities, setActivities] = useState([]);
+    const [favoriteActivities, setFavoriteActivities] = useState(() =>
+        readFavorites(ACTIVITY_FAVORITES_KEY),
+    );
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -134,6 +141,10 @@ export default function EventDetails() {
         } catch {
             setMessage("Nao foi possivel concluir a inscricao.");
         }
+    }
+
+    function handleFavoriteActivity(activityId, checked) {
+        setFavoriteActivities(updateFavorite(ACTIVITY_FAVORITES_KEY, activityId, checked));
     }
 
     const totalVacancies = activities.reduce((sum, activity) => sum + activity.vacancies, 0);
@@ -242,16 +253,26 @@ export default function EventDetails() {
                                 <div className="event-card__footer">
                                     <strong>Vagas limitadas</strong>
 
-                                    <button
-                                        className="btn btn-primary"
-                                        type="button"
-                                        onClick={() => handleSubscribe(activity)}
-                                        disabled={activity.filled >= activity.vacancies}
-                                    >
-                                        {activity.filled >= activity.vacancies
-                                            ? "Lotada"
-                                            : "Inscrever-se"}
-                                    </button>
+                                    <div className="event-card__actions">
+                                        <FavoriteToggle
+                                            checked={favoriteActivities.includes(String(activity.id))}
+                                            onChange={(checked) =>
+                                                handleFavoriteActivity(activity.id, checked)
+                                            }
+                                            label="Favoritar"
+                                        />
+
+                                        <button
+                                            className="btn btn-primary"
+                                            type="button"
+                                            onClick={() => handleSubscribe(activity)}
+                                            disabled={activity.filled >= activity.vacancies}
+                                        >
+                                            {activity.filled >= activity.vacancies
+                                                ? "Lotada"
+                                                : "Inscrever-se"}
+                                        </button>
+                                    </div>
                                 </div>
                             </article>
                         ))}
