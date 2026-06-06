@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, ClipboardCheck, ClipboardList, UserRound } from "lucide-react";
+import Loader from "../components/Loader";
 import { criarPresenca, listarPresencasDaAtividade } from "../services/api";
 
 export default function AttendanceValidation() {
@@ -10,7 +11,7 @@ export default function AttendanceValidation() {
     const [presencas, setPresencas] = useState([]);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     async function loadPresencas(targetAtividadeId = atividadeId) {
         if (!targetAtividadeId.trim()) {
@@ -152,7 +153,9 @@ export default function AttendanceValidation() {
                 </div>
 
                 {loading ? (
-                    <div className="card">Carregando presencas...</div>
+                    <div className="card">
+                        <Loader />
+                    </div>
                 ) : presencas.length === 0 ? (
                     <div className="card">Nenhuma presenca registrada para esta atividade.</div>
                 ) : (

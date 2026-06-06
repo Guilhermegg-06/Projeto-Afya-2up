@@ -12,6 +12,7 @@ import {
     Ticket,
     Users,
 } from "lucide-react";
+import Loader from "../components/Loader";
 import { listarEventos, obterEvento } from "../services/api";
 
 const statsBase = [
@@ -207,7 +208,7 @@ export default function Events() {
                             </div>
                         </>
                     ) : (
-                        <p>Carregando destaque do evento...</p>
+                        <Loader />
                     )}
                 </aside>
             </section>
@@ -249,7 +250,9 @@ export default function Events() {
                 </div>
 
                 {loading ? (
-                    <div className="card">Carregando eventos...</div>
+                    <div className="card">
+                        <Loader />
+                    </div>
                 ) : error ? (
                     <div className="card">{error}</div>
                 ) : (

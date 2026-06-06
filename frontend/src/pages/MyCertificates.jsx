@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, ScanSearch, ShieldCheck, Ticket } from "lucide-react";
+import Loader from "../components/Loader";
 import { listarCertificadosDoAluno, validarCertificado } from "../services/api";
 
 export default function MyCertificates() {
@@ -142,7 +143,9 @@ export default function MyCertificates() {
                 </div>
 
                 {loading ? (
-                    <div className="card">Carregando certificados...</div>
+                    <div className="card">
+                        <Loader />
+                    </div>
                 ) : error ? (
                     <div className="card">{error}</div>
                 ) : certificates.length === 0 ? (

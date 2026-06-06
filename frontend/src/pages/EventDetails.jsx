@@ -10,6 +10,7 @@ import {
     UserRound,
     Users,
 } from "lucide-react";
+import Loader from "../components/Loader";
 import {
     criarInscricao,
     listarAtividadesPorEvento,
@@ -153,7 +154,7 @@ export default function EventDetails() {
                 </div>
 
                 {loading ? (
-                    <p>Carregando detalhes...</p>
+                    <Loader />
                 ) : error ? (
                     <p>{error}</p>
                 ) : event ? (
@@ -209,7 +210,9 @@ export default function EventDetails() {
                 </div>
 
                 {loading ? (
-                    <div className="card">Carregando atividades...</div>
+                    <div className="card">
+                        <Loader />
+                    </div>
                 ) : (
                     <div className="events-list">
                         {activities.map((activity) => (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CircleX, Ticket, Users } from "lucide-react";
+import Loader from "../components/Loader";
 import { listarInscricoesDoAluno, removerInscricao } from "../services/api";
 
 function formatStatus(value) {
@@ -128,7 +129,9 @@ export default function MyRegistrations() {
                 </div>
 
                 {loading ? (
-                    <div className="card">Carregando inscricoes...</div>
+                    <div className="card">
+                        <Loader />
+                    </div>
                 ) : error ? (
                     <div className="card">{error}</div>
                 ) : registrations.length === 0 ? (
