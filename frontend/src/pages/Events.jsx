@@ -12,9 +12,13 @@ import {
     Ticket,
     Users,
 } from "lucide-react";
+import FavoriteToggle from "../components/FavoriteToggle";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
+import { readFavorites, updateFavorite } from "../services/favorites";
 import { listarEventos, obterEvento } from "../services/api";
+
+const EVENT_FAVORITES_KEY = "afya:favoritos:eventos";
 
 const statsBase = [
     {
@@ -75,6 +79,7 @@ export default function Events() {
     const [events, setEvents] = useState([]);
     const [featuredEvent, setFeaturedEvent] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [favoriteEvents, setFavoriteEvents] = useState(() => readFavorites(EVENT_FAVORITES_KEY));
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -158,6 +163,10 @@ export default function Events() {
     }, [events, searchTerm]);
 
     const hero = featuredEvent ?? events[0];
+
+    function handleFavoriteEvent(eventId, checked) {
+        setFavoriteEvents(updateFavorite(EVENT_FAVORITES_KEY, eventId, checked));
+    }
 
     return (
         <main className="events-page">
@@ -330,10 +339,18 @@ export default function Events() {
                                 <div className="event-card__footer">
                                     <strong>{event.capacity} vagas</strong>
 
-                                    <Link className="event-card__link" to={`/eventos/${event.id}`}>
-                                        Ver detalhes
-                                        <ArrowRight size={16} />
-                                    </Link>
+                                    <div className="event-card__actions">
+                                        <FavoriteToggle
+                                            checked={favoriteEvents.includes(String(event.id))}
+                                            onChange={(checked) => handleFavoriteEvent(event.id, checked)}
+                                            label="Favoritar"
+                                        />
+
+                                        <Link className="event-card__link" to={`/eventos/${event.id}`}>
+                                            Ver detalhes
+                                            <ArrowRight size={16} />
+                                        </Link>
+                                    </div>
                                 </div>
                             </article>
                         ))}
