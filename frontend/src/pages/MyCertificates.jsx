@@ -159,7 +159,7 @@ export default function MyCertificates() {
                                     <span className="event-date">Codigo {certificate.codigo}</span>
                                 </div>
 
-                                <h3>{certificate.eventoId}</h3>
+                                <h3>Evento #{certificate.eventoId}</h3>
                                 <p>{certificate.atividadeTitulo}</p>
                                 <p>Aluno: {certificate.alunoId}</p>
 

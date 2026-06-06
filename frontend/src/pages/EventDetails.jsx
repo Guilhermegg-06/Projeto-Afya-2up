@@ -55,6 +55,10 @@ function formatActivityStatus(activity) {
     return `${remaining} vagas disponiveis`;
 }
 
+async function carregarDetalhesEvento(eventoId) {
+    return Promise.all([obterEvento(eventoId), listarAtividadesPorEvento(eventoId)]);
+}
+
 export default function EventDetails() {
     const { id } = useParams();
     const [event, setEvent] = useState(null);
@@ -68,13 +72,9 @@ export default function EventDetails() {
 
         async function loadDetails() {
             try {
-                setLoading(true);
                 setError("");
 
-                const [eventData, activitiesData] = await Promise.all([
-                    obterEvento(id),
-                    listarAtividadesPorEvento(id),
-                ]);
+                const [eventData, activitiesData] = await carregarDetalhesEvento(id);
 
                 if (!active) {
                     return;
@@ -100,6 +100,21 @@ export default function EventDetails() {
         };
     }, [id]);
 
+    async function reloadDetails() {
+        try {
+            setLoading(true);
+            setError("");
+
+            const [eventData, activitiesData] = await carregarDetalhesEvento(id);
+            setEvent(eventData);
+            setActivities((activitiesData ?? []).map(normalizeActivity));
+        } catch {
+            setError("Nao foi possivel atualizar os detalhes deste evento.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
     async function handleSubscribe(activity) {
         if (activity.filled >= activity.vacancies) {
             setMessage("Nao ha vagas disponiveis para esta atividade.");
@@ -113,13 +128,7 @@ export default function EventDetails() {
                 atividadeId: activity.id,
             });
 
-            setActivities((current) =>
-                current.map((item) =>
-                    item.id === activity.id
-                        ? { ...item, filled: item.filled + 1 }
-                        : item,
-                ),
-            );
+            await reloadDetails();
             setMessage("Inscricao realizada com sucesso.");
         } catch {
             setMessage("Nao foi possivel concluir a inscricao.");
