@@ -4,6 +4,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import StudentDashboard from "../pages/StudentDashboard";
 import CoordinatorDashboard from "../pages/CoordenadorDashboard";
+import AdminEvents from "../pages/AdminEvents";
 import Events from "../pages/Events";
 import EventDetails from "../pages/EventDetails";
 import MyRegistrations from "../pages/MyRegistrations";
@@ -18,6 +19,7 @@ export default function AppRoutes() {
                 <Route path="/cadastro" element={<Register />} />
                 <Route path="/aluno" element={<StudentDashboard />} />
                 <Route path="/coordenador" element={<CoordinatorDashboard />} />
+                <Route path="/coordenador/eventos" element={<AdminEvents />} />
                 <Route path="/eventos" element={<Events />} />
                 <Route path="/eventos/:id" element={<EventDetails />} />
                 <Route path="/minhas-inscricoes" element={<MyRegistrations />} />

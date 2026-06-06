@@ -1,23 +1,48 @@
 import { Link } from "react-router-dom";
+import { BadgeCheck, BookOpen, GraduationCap } from "lucide-react";
+
+const actions = [
+    {
+        title: "Eventos disponiveis",
+        description: "Veja a programacao aberta e escolha atividades para participar.",
+        to: "/eventos",
+        icon: BookOpen,
+    },
+    {
+        title: "Minhas inscricoes",
+        description: "Acompanhe status, presenca e atividades ja escolhidas.",
+        to: "/minhas-inscricoes",
+        icon: GraduationCap,
+    },
+    {
+        title: "Meus certificados",
+        description: "Consulte certificados emitidos e codigos de validacao.",
+        to: "/meus-certificados",
+        icon: BadgeCheck,
+    },
+];
 
 export default function StudentDashboard() {
     return (
-        <main className="page">
-            <h1>Dashboard do Aluno</h1>
-            <p>Bem-vindo à plataforma de eventos acadêmicos.</p>
+        <main className="page dashboard-page">
+            <section className="dashboard-hero">
+                <span className="section-heading__eyebrow">Area do aluno</span>
+                <h1>Escolha cursos, acompanhe inscricoes e guarde certificados.</h1>
+                <p>Um painel direto para continuar de onde voce parou.</p>
+            </section>
 
-            <section style={{ display: "grid", gap: 16, marginTop: 24 }}>
-                <Link className="card" to="/eventos">
-                    Ver eventos disponíveis
-                </Link>
+            <section className="dashboard-grid" aria-label="Acoes do aluno">
+                {actions.map((action) => {
+                    const Icon = action.icon;
 
-                <Link className="card" to="/minhas-inscricoes">
-                    Minhas inscrições
-                </Link>
-
-                <Link className="card" to="/meus-certificados">
-                    Meus certificados
-                </Link>
+                    return (
+                        <Link className="dashboard-tile" to={action.to} key={action.title}>
+                            <Icon size={24} />
+                            <strong>{action.title}</strong>
+                            <span>{action.description}</span>
+                        </Link>
+                    );
+                })}
             </section>
         </main>
     );
