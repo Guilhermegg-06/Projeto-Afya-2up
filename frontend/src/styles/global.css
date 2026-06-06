@@ -562,6 +562,38 @@ p {
     margin-top: 32px;
 }
 
+.event-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent-strong);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.event-detail-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.event-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.event-detail-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: var(--muted-strong);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .section-heading {
     display: flex;
     align-items: end;

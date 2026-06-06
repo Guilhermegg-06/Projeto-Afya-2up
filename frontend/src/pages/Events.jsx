@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     ArrowRight,
@@ -11,17 +12,16 @@ import {
     Ticket,
     Users,
 } from "lucide-react";
+import { listarEventos, obterEvento } from "../services/api";
 
-const stats = [
+const statsBase = [
     {
         label: "Eventos ativos",
-        value: "12",
         detail: "programacao aberta para inscricao",
         icon: CalendarDays,
     },
     {
         label: "Vagas disponiveis",
-        value: "184",
         detail: "controle por limite e lotacao",
         icon: Ticket,
     },
@@ -33,59 +33,107 @@ const stats = [
     },
 ];
 
-const featuredEvent = {
-    id: 1,
-    title: "Semana Academica de Computacao",
-    date: "20 a 24 de junho de 2026",
-    description:
-        "Uma experiencia completa com palestras, minicursos e oficinas para conectar coordenacao, estudantes e convidados em um unico fluxo de inscricao.",
-    location: "Auditorio Central e Laboratorios de Tecnologia",
-    capacity: "240 participantes",
-    status: "Inscricoes abertas",
-    progress: 72,
-    tags: ["Presencial", "Certificado automatico", "Vagas limitadas"],
-};
+function formatDateRange(evento) {
+    if (!evento?.dataInicio) {
+        return "Data a definir";
+    }
 
-const events = [
-    {
-        id: 2,
-        title: "Workshop de Java e Spring Boot",
-        date: "25 de junho de 2026",
-        time: "14h as 18h",
-        description:
-            "Atividade pratica focada em backend, boas praticas e organizacao de projetos reais.",
-        location: "Laboratorio 03",
-        vacancies: "20 vagas",
-        enrolled: "18 inscritos",
-        category: "Minicurso",
-    },
-    {
-        id: 3,
-        title: "Palestra: Carreira em Tecnologia",
-        date: "28 de junho de 2026",
-        time: "19h as 21h",
-        description:
-            "Encontro com convidados do mercado para discutir trajetorias, portfolio e empregabilidade.",
-        location: "Sala Magna",
-        vacancies: "80 vagas",
-        enrolled: "54 inscritos",
-        category: "Palestra",
-    },
-    {
-        id: 4,
-        title: "Oficina de UX e prototipacao",
-        date: "02 de julho de 2026",
-        time: "09h as 12h",
-        description:
-            "Sessao aplicada para desenhar fluxos, prototipos e entregas mais claras para projetos academicos.",
-        location: "Laboratorio de Design",
-        vacancies: "30 vagas",
-        enrolled: "26 inscritos",
-        category: "Oficina",
-    },
-];
+    const options = { day: "2-digit", month: "long", year: "numeric" };
+    const inicio = new Date(`${evento.dataInicio}T00:00:00`).toLocaleDateString("pt-BR", options);
+    const fim = evento.dataFim
+        ? new Date(`${evento.dataFim}T00:00:00`).toLocaleDateString("pt-BR", options)
+        : inicio;
+
+    return inicio === fim ? inicio : `${inicio} ate ${fim}`;
+}
+
+function normalizeEvent(evento) {
+    if (!evento) {
+        return null;
+    }
+
+    return {
+        id: evento.id,
+        title: evento.titulo ?? evento.title ?? "Evento sem nome",
+        description: evento.descricao ?? evento.description ?? "",
+        date: formatDateRange(evento),
+        location: evento.local ?? evento.location ?? "Local nao informado",
+        capacity: evento.capacidade ?? evento.capacity ?? 0,
+        status: evento.status ?? "Inscricoes abertas",
+        progress: evento.ocupacao ?? evento.progress ?? 0,
+        tags: evento.etiquetas ?? evento.tags ?? [],
+    };
+}
+
+function normalizeEventList(items) {
+    return items.map(normalizeEvent).filter(Boolean);
+}
 
 export default function Events() {
+    const [events, setEvents] = useState([]);
+    const [featuredEvent, setFeaturedEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        let active = true;
+
+        async function loadEvents() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const [list, featured] = await Promise.all([listarEventos(), obterEvento(1)]);
+
+                if (!active) {
+                    return;
+                }
+
+                const normalizedList = normalizeEventList(list);
+                setEvents(normalizedList);
+                setFeaturedEvent(normalizeEvent(featured) ?? normalizedList[0] ?? null);
+            } catch {
+                if (active) {
+                    setError("Nao foi possivel carregar a programacao no momento.");
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        loadEvents();
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    const stats = useMemo(() => {
+        const totalEvents = events.length;
+        const totalCapacity = events.reduce((sum, event) => sum + Number(event.capacity || 0), 0);
+        const avgProgress = totalEvents
+            ? Math.round(
+                  events.reduce((sum, event) => sum + Number(event.progress || 0), 0) / totalEvents,
+              )
+            : 0;
+
+        return statsBase.map((item) => {
+            if (item.label === "Eventos ativos") {
+                return { ...item, value: String(totalEvents || 0) };
+            }
+
+            if (item.label === "Vagas disponiveis") {
+                return { ...item, value: String(totalCapacity || 0) };
+            }
+
+            return { ...item, value: `${avgProgress || 0}%` };
+        });
+    }, [events]);
+
+    const hero = featuredEvent ?? events[0];
+
     return (
         <main className="events-page">
             <section className="events-hero">
@@ -108,7 +156,7 @@ export default function Events() {
                             Acessar painel do coordenador
                         </Link>
 
-                        <Link className="btn btn-secondary" to={`/eventos/${featuredEvent.id}`}>
+                        <Link className="btn btn-secondary" to={hero ? `/eventos/${hero.id}` : "/eventos"}>
                             Ver destaque do evento
                             <ArrowRight size={16} />
                         </Link>
@@ -121,40 +169,46 @@ export default function Events() {
                         Visao geral da programacao
                     </div>
 
-                    <h2>{featuredEvent.title}</h2>
-                    <p>{featuredEvent.description}</p>
+                    {hero ? (
+                        <>
+                            <h2>{hero.title}</h2>
+                            <p>{hero.description}</p>
 
-                    <div className="events-meta">
-                        <div>
-                            <span className="meta-label">Periodo</span>
-                            <strong>{featuredEvent.date}</strong>
-                        </div>
-                        <div>
-                            <span className="meta-label">Local</span>
-                            <strong>{featuredEvent.location}</strong>
-                        </div>
-                        <div>
-                            <span className="meta-label">Capacidade</span>
-                            <strong>{featuredEvent.capacity}</strong>
-                        </div>
-                    </div>
+                            <div className="events-meta">
+                                <div>
+                                    <span className="meta-label">Periodo</span>
+                                    <strong>{hero.date}</strong>
+                                </div>
+                                <div>
+                                    <span className="meta-label">Local</span>
+                                    <strong>{hero.location}</strong>
+                                </div>
+                                <div>
+                                    <span className="meta-label">Capacidade</span>
+                                    <strong>{hero.capacity}</strong>
+                                </div>
+                            </div>
 
-                    <div className="events-progress">
-                        <div className="events-progress__header">
-                            <span>Ocupacao geral</span>
-                            <strong>{featuredEvent.progress}%</strong>
-                        </div>
+                            <div className="events-progress">
+                                <div className="events-progress__header">
+                                    <span>{hero.status}</span>
+                                    <strong>{hero.progress}%</strong>
+                                </div>
 
-                        <div className="events-progress__bar" aria-hidden="true">
-                            <span style={{ width: `${featuredEvent.progress}%` }} />
-                        </div>
-                    </div>
+                                <div className="events-progress__bar" aria-hidden="true">
+                                    <span style={{ width: `${hero.progress}%` }} />
+                                </div>
+                            </div>
 
-                    <div className="events-tags">
-                        {featuredEvent.tags.map((tag) => (
-                            <span key={tag}>{tag}</span>
-                        ))}
-                    </div>
+                            <div className="events-tags">
+                                {hero.tags.map((tag) => (
+                                    <span key={tag}>{tag}</span>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <p>Carregando destaque do evento...</p>
+                    )}
                 </aside>
             </section>
 
@@ -194,46 +248,52 @@ export default function Events() {
                     </p>
                 </div>
 
-                <div className="events-list">
-                    {events.map((event) => (
-                        <article className="event-card" key={event.id}>
-                            <div className="event-card__header">
-                                <span className="event-chip">{event.category}</span>
-                                <span className="event-date">
-                                    <CalendarDays size={14} />
-                                    {event.date}
-                                </span>
-                            </div>
+                {loading ? (
+                    <div className="card">Carregando eventos...</div>
+                ) : error ? (
+                    <div className="card">{error}</div>
+                ) : (
+                    <div className="events-list">
+                        {events.map((event) => (
+                            <article className="event-card" key={event.id}>
+                                <div className="event-card__header">
+                                    <span className="event-chip">Evento academico</span>
+                                    <span className="event-date">
+                                        <CalendarDays size={14} />
+                                        {event.date}
+                                    </span>
+                                </div>
 
-                            <h3>{event.title}</h3>
-                            <p>{event.description}</p>
+                                <h3>{event.title}</h3>
+                                <p>{event.description}</p>
 
-                            <div className="event-card__details">
-                                <span>
-                                    <MapPin size={14} />
-                                    {event.location}
-                                </span>
-                                <span>
-                                    <Clock3 size={14} />
-                                    {event.time}
-                                </span>
-                                <span>
-                                    <Users size={14} />
-                                    {event.enrolled}
-                                </span>
-                            </div>
+                                <div className="event-card__details">
+                                    <span>
+                                        <MapPin size={14} />
+                                        {event.location}
+                                    </span>
+                                    <span>
+                                        <Clock3 size={14} />
+                                        {event.status}
+                                    </span>
+                                    <span>
+                                        <Users size={14} />
+                                        {event.progress}% ocupado
+                                    </span>
+                                </div>
 
-                            <div className="event-card__footer">
-                                <strong>{event.vacancies}</strong>
+                                <div className="event-card__footer">
+                                    <strong>{event.capacity} vagas</strong>
 
-                                <Link className="event-card__link" to={`/eventos/${event.id}`}>
-                                    Ver detalhes
-                                    <ArrowRight size={16} />
-                                </Link>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                                    <Link className="event-card__link" to={`/eventos/${event.id}`}>
+                                        Ver detalhes
+                                        <ArrowRight size={16} />
+                                    </Link>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
             </section>
         </main>
     );
