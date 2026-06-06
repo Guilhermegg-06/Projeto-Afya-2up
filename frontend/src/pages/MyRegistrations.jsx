@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CircleX, Ticket, Users } from "lucide-react";
 import Loader from "../components/Loader";
+import SearchInput from "../components/SearchInput";
 import { listarInscricoesDoAluno, removerInscricao } from "../services/api";
 
 function formatStatus(value) {
@@ -91,13 +92,15 @@ export default function MyRegistrations() {
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
                     <label className="field">
                         <span>Aluno ID</span>
-                        <input
-                            className="input"
+                        <SearchInput
+                            name="alunoId"
                             type="number"
+                            inputMode="numeric"
                             min="1"
                             value={alunoId}
                             onChange={(event) => setAlunoId(event.target.value)}
-                            placeholder="1"
+                            placeholder="Pesquisar aluno"
+                            ariaLabel="Pesquisar inscricoes do aluno"
                         />
                     </label>
 

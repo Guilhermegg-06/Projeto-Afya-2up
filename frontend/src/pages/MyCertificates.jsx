@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, ScanSearch, ShieldCheck, Ticket } from "lucide-react";
 import Loader from "../components/Loader";
+import SearchInput from "../components/SearchInput";
 import { listarCertificadosDoAluno, validarCertificado } from "../services/api";
 
 export default function MyCertificates() {
@@ -97,13 +98,15 @@ export default function MyCertificates() {
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
                     <label className="field">
                         <span>Aluno ID</span>
-                        <input
-                            className="input"
+                        <SearchInput
+                            name="alunoId"
                             type="number"
+                            inputMode="numeric"
                             min="1"
                             value={alunoId}
                             onChange={(event) => setAlunoId(event.target.value)}
-                            placeholder="1"
+                            placeholder="Pesquisar aluno"
+                            ariaLabel="Pesquisar certificados do aluno"
                         />
                     </label>
 
@@ -185,12 +188,12 @@ export default function MyCertificates() {
                 <form className="form" onSubmit={handleValidate} style={{ marginTop: 24 }}>
                     <label className="field">
                         <span>Codigo de validacao</span>
-                        <input
-                            className="input"
-                            type="text"
+                        <SearchInput
+                            name="codigo"
                             value={codigo}
                             onChange={(event) => setCodigo(event.target.value)}
                             placeholder="CERT-2026-001"
+                            ariaLabel="Pesquisar certificado pelo codigo"
                         />
                     </label>
 

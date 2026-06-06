@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, ClipboardCheck, ClipboardList, UserRound } from "lucide-react";
 import Loader from "../components/Loader";
+import SearchInput from "../components/SearchInput";
 import { criarPresenca, listarPresencasDaAtividade } from "../services/api";
 
 export default function AttendanceValidation() {
@@ -96,25 +97,32 @@ export default function AttendanceValidation() {
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
                     <label className="field">
                         <span>Atividade ID</span>
-                        <input
-                            className="input"
+                        <SearchInput
+                            name="atividadeId"
                             type="number"
+                            inputMode="numeric"
                             min="1"
                             value={atividadeId}
                             onChange={(event) => setAtividadeId(event.target.value)}
-                            placeholder="101"
+                            placeholder="Pesquisar atividade"
+                            ariaLabel="Pesquisar presencas da atividade"
+                            buttonType="button"
+                            onButtonClick={() => loadPresencas(atividadeId)}
                         />
                     </label>
 
                     <label className="field">
                         <span>Inscricao ID</span>
-                        <input
-                            className="input"
+                        <SearchInput
+                            name="inscricaoId"
                             type="number"
+                            inputMode="numeric"
                             min="1"
                             value={inscricaoId}
                             onChange={(event) => setInscricaoId(event.target.value)}
-                            placeholder="1"
+                            placeholder="Pesquisar inscricao"
+                            ariaLabel="Pesquisar inscricao para presenca"
+                            buttonType="button"
                         />
                     </label>
 
