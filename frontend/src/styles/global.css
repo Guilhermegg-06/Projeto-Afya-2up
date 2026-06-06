@@ -760,6 +760,179 @@ p {
     width: 100%;
 }
 
+.login-layout {
+    align-items: stretch;
+}
+
+.login-visual {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 640px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background:
+        linear-gradient(150deg, rgba(255, 122, 149, 0.13), transparent 34%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(8, 13, 24, 0.98));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+}
+
+.login-heart-scene {
+    display: grid;
+    place-items: center;
+    min-height: 330px;
+}
+
+.animated-heart {
+    width: min(100%, 430px);
+    aspect-ratio: 600 / 552;
+    overflow: visible;
+    filter: drop-shadow(0 30px 55px rgba(214, 53, 100, 0.24));
+}
+
+.animated-heart__shadow {
+    fill: rgba(0, 0, 0, 0.22);
+    transform: translate(0, 18px) scale(0.96);
+    transform-origin: center;
+    filter: blur(10px);
+}
+
+.animated-heart__shape {
+    fill: url("#heartGradient");
+    filter: url("#heartGlow");
+    transform-origin: center;
+    animation: heartBeat 2.6s ease-in-out infinite;
+}
+
+.animated-heart__line {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.92);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1420;
+    stroke-dashoffset: 1420;
+    animation: heartDraw 4.8s ease-in-out infinite;
+}
+
+.heart-particle {
+    fill: #ffd2dc;
+    opacity: 0;
+    transform-origin: center;
+    animation: heartParticle 3.8s ease-in-out infinite;
+}
+
+.heart-particle--two {
+    animation-delay: 0.35s;
+}
+
+.heart-particle--three {
+    animation-delay: 0.7s;
+}
+
+.heart-particle--four {
+    animation-delay: 1.05s;
+}
+
+.heart-particle--five {
+    animation-delay: 1.4s;
+}
+
+.login-visual__copy {
+    display: grid;
+    gap: 14px;
+}
+
+.login-visual__copy p {
+    max-width: 52ch;
+    color: var(--muted-strong);
+}
+
+.login-card {
+    justify-content: center;
+}
+
+.login-highlights {
+    display: grid;
+    gap: 10px;
+}
+
+.login-highlight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted-strong);
+}
+
+.login-highlight svg {
+    color: #ff9aad;
+    flex: 0 0 auto;
+}
+
+@keyframes heartBeat {
+    0%,
+    100% {
+        transform: scale(0.96);
+    }
+
+    18% {
+        transform: scale(1.04);
+    }
+
+    34% {
+        transform: scale(0.98);
+    }
+
+    52% {
+        transform: scale(1.08);
+    }
+
+    72% {
+        transform: scale(0.97);
+    }
+}
+
+@keyframes heartDraw {
+    0% {
+        stroke-dashoffset: 1420;
+        opacity: 0;
+    }
+
+    18%,
+    70% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+
+    100% {
+        stroke-dashoffset: -1420;
+        opacity: 0;
+    }
+}
+
+@keyframes heartParticle {
+    0%,
+    100% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.5);
+    }
+
+    28% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    72% {
+        opacity: 0;
+        transform: translateY(-38px) scale(0.72);
+    }
+}
+
 .events-hero__content {
     display: flex;
     flex-direction: column;
@@ -1129,12 +1302,21 @@ p {
     .events-hero__content,
     .events-hero__panel,
     .auth-panel,
+    .login-visual,
     .auth-card,
     .card,
     .page .card,
     .stat-card,
     .event-card {
         padding: 20px;
+    }
+
+    .login-visual {
+        min-height: auto;
+    }
+
+    .login-heart-scene {
+        min-height: 240px;
     }
 
     .events-meta {
