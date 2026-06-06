@@ -817,6 +817,12 @@ p {
     margin-bottom: 14px;
 }
 
+.events-search {
+    display: flex;
+    justify-content: flex-start;
+    margin: 0 0 24px;
+}
+
 .events-list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

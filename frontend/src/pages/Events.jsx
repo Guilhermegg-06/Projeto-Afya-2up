@@ -13,6 +13,7 @@ import {
     Users,
 } from "lucide-react";
 import Loader from "../components/Loader";
+import SearchInput from "../components/SearchInput";
 import { listarEventos, obterEvento } from "../services/api";
 
 const statsBase = [
@@ -73,6 +74,7 @@ function normalizeEventList(items) {
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [featuredEvent, setFeaturedEvent] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -132,6 +134,28 @@ export default function Events() {
             return { ...item, value: `${avgProgress || 0}%` };
         });
     }, [events]);
+
+    const filteredEvents = useMemo(() => {
+        const term = searchTerm.trim().toLowerCase();
+
+        if (!term) {
+            return events;
+        }
+
+        return events.filter((event) => {
+            const searchableText = [
+                event.title,
+                event.description,
+                event.location,
+                event.status,
+                ...(event.tags ?? []),
+            ]
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(term);
+        });
+    }, [events, searchTerm]);
 
     const hero = featuredEvent ?? events[0];
 
@@ -249,15 +273,33 @@ export default function Events() {
                     </p>
                 </div>
 
+                <form
+                    className="events-search"
+                    onSubmit={(event) => event.preventDefault()}
+                    role="search"
+                    aria-label="Pesquisar eventos"
+                >
+                    <SearchInput
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        placeholder="Pesquisar eventos"
+                        name="eventSearch"
+                        buttonType="button"
+                        ariaLabel="Pesquisar eventos"
+                    />
+                </form>
+
                 {loading ? (
                     <div className="card">
                         <Loader />
                     </div>
                 ) : error ? (
                     <div className="card">{error}</div>
+                ) : filteredEvents.length === 0 ? (
+                    <div className="card">Nenhum evento encontrado para esta pesquisa.</div>
                 ) : (
                     <div className="events-list">
-                        {events.map((event) => (
+                        {filteredEvents.map((event) => (
                             <article className="event-card" key={event.id}>
                                 <div className="event-card__header">
                                     <span className="event-chip">Evento academico</span>
