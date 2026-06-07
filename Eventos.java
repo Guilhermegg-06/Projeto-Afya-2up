@@ -1,20 +1,30 @@
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "eventos")
+
 public class Eventos {
 
-    private static int proxIdEvento = 1;
-    private int idEvento;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private Boolean disponibilidadeEvento; /*Diz se o evento esta aberto, ou se ja fechou, seja por ja ter passado da Data ou pro escolha do organizador. */
     private String categoriaEvento;
     private String dataEvento;
     private String localEvento;
     private String descricaoEvento;
-    private String tipoEvento; /*Palestra, MiniCurso e etc */
+    private String tipoEvento; /*Palestra ou MiniCurso */
     private String nomeEvento;
     private Double horasComplementares;
     private int vagasDisponiveis;
     private Coordenador organizador;
 
+    public Eventos() {
+    }
+
     public Eventos(Boolean disponibilidadeEvento, String categoriaEvento, String dataEvento, String localEvento, String descricaoEvento, String tipoEvento, String nomeEvento, Double horasComplementares, int vagasDisponiveis, Coordenador organizador){
-        this.idEvento = proxIdEvento++;
+
         this.disponibilidadeEvento = disponibilidadeEvento;
         this.categoriaEvento = categoriaEvento;
         this.dataEvento = dataEvento;
@@ -27,8 +37,8 @@ public class Eventos {
         this.organizador = organizador;
 
 }
-    public int getIdEvento() {
-        return idEvento;
+    public Long getId() {
+        return id;
     }
 
     public Boolean getDisponibilidadeEvento() {
