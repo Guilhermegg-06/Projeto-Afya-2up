@@ -1,7 +1,9 @@
 /target/
+**/target/
 /.idea/
 /.vscode/
 *.iml
 .project
 .classpath
 .settings/
+projeto-afya-2up/
