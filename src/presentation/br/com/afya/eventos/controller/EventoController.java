@@ -4,7 +4,9 @@ import br.com.afya.eventos.dto.ApiDtos.EventoRequest;
 import br.com.afya.eventos.dto.ApiDtos.EventoResponse;
 import br.com.afya.eventos.dto.ApiDtos.AtividadeRequest;
 import br.com.afya.eventos.dto.ApiDtos.AtividadeResponse;
+import br.com.afya.eventos.service.AtividadeService;
 import br.com.afya.eventos.service.CatalogoAcademicoService;
+import br.com.afya.eventos.service.EventoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,20 +25,29 @@ import java.util.List;
 public class EventoController {
 
     private final CatalogoAcademicoService service;
+    private final EventoService eventoService;
+    private final AtividadeService atividadeService;
 
-    public EventoController(CatalogoAcademicoService service) {
+    public EventoController(
+            CatalogoAcademicoService service,
+            EventoService eventoService,
+            AtividadeService atividadeService
+    ) {
         this.service = service;
+        this.eventoService = eventoService;
+        this.atividadeService = atividadeService;
     }
 
     @GetMapping
     public List<EventoResponse> listarEventos() {
-        return service.listarEventos();
+        return eventoService.listarEventos();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EventoResponse> buscarEvento(@PathVariable Long id) {
-        EventoResponse evento = service.buscarEvento(id);
-        return evento == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(evento);
+        return eventoService.buscarEvento(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -71,7 +82,7 @@ public class EventoController {
 
     @GetMapping("/{eventoId}/atividades")
     public List<AtividadeResponse> listarAtividades(@PathVariable Long eventoId) {
-        return service.listarAtividadesDoEvento(eventoId);
+        return atividadeService.listarAtividadesDoEvento(eventoId);
     }
 
     @PostMapping("/{eventoId}/atividades")

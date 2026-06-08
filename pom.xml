@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -78,7 +78,6 @@
                                 <source>src/domain</source>
                                 <source>src/application</source>
                                 <source>src/infrastructure</source>
-                                <source>src/presentation</source>
                             </sources>
                         </configuration>
                     </execution>

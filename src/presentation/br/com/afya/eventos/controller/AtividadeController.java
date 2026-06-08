@@ -4,6 +4,7 @@ import br.com.afya.eventos.dto.ApiDtos.AtividadeRequest;
 import br.com.afya.eventos.dto.ApiDtos.AtividadeResponse;
 import br.com.afya.eventos.dto.ApiDtos.InscricaoResponse;
 import br.com.afya.eventos.dto.ApiDtos.PresencaResponse;
+import br.com.afya.eventos.service.AtividadeService;
 import br.com.afya.eventos.service.CatalogoAcademicoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,15 +23,18 @@ import java.util.List;
 public class AtividadeController {
 
     private final CatalogoAcademicoService service;
+    private final AtividadeService atividadeService;
 
-    public AtividadeController(CatalogoAcademicoService service) {
+    public AtividadeController(CatalogoAcademicoService service, AtividadeService atividadeService) {
         this.service = service;
+        this.atividadeService = atividadeService;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<AtividadeResponse> buscarAtividade(@PathVariable Long id) {
-        AtividadeResponse atividade = service.buscarAtividade(id);
-        return atividade == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(atividade);
+        return atividadeService.buscarAtividade(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
