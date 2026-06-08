@@ -1,21 +1,32 @@
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "atividades")
+
 public class Atividade {    
 
-    private static int proxIdAtividade = 1;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private int idAtividade;
     private String nomeAtv;
     private String descricaoAtv;
-    private String tipoAtv; // Palestra, Minicurso, Workshop, etc.
+    private String tipoAtv; // Palestra, Minicurso, Workshop...
     private String dataAtv;
     private String horarioInicioAtv;
     private String horarioFimAtv;
     private int vagasAtv;
     private double cargaHorariaAtv;
     private Coordenador responsavelAtv;
+    @ManyToOne
+    @JoinColumn(name = "evento_id")
     private Eventos evento;
 
+    public Atividade() {
+    }
+
     public Atividade (String nomeAtv, String descricaoAtv, String tipoAtv, String dataAtv, String horarioInicioAtv, String horarioFimAtv, int vagasAtv, double cargaHorariaAtv, Coordenador responsavelAtv, Eventos evento){
-        this.idAtividade = proxIdAtividade++;
+
         this.nomeAtv = nomeAtv;
         this.descricaoAtv = descricaoAtv;
         this.tipoAtv = tipoAtv;
@@ -29,8 +40,8 @@ public class Atividade {
 
     }
 
-    public int getIdAtividade() {
-        return idAtividade;
+    public Long getId() {
+        return id;
     }
 
     public String getNomeAtv() {
