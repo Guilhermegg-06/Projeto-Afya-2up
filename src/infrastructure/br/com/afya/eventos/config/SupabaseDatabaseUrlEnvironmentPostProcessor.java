@@ -16,14 +16,33 @@ public class SupabaseDatabaseUrlEnvironmentPostProcessor implements EnvironmentP
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        String datasourceUrl = environment.getProperty("SPRING_DATASOURCE_URL");
+        String explicitDatasourceUrl = environment.getProperty("SPRING_DATASOURCE_URL");
+        String datasourceUrl = explicitDatasourceUrl;
         if (datasourceUrl == null || datasourceUrl.isBlank()) {
             datasourceUrl = environment.getProperty("spring.datasource.url");
         }
 
         Map<String, Object> overrides = normalizePostgresUrl(datasourceUrl, environment);
+        configureDialect(overrides, datasourceUrl, explicitDatasourceUrl);
         if (!overrides.isEmpty()) {
             environment.getPropertySources().addFirst(new MapPropertySource("supabaseDatabaseUrl", overrides));
+        }
+    }
+
+    private void configureDialect(Map<String, Object> overrides, String datasourceUrl, String explicitDatasourceUrl) {
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            return;
+        }
+
+        if (datasourceUrl.startsWith("jdbc:h2:") && (explicitDatasourceUrl == null || explicitDatasourceUrl.isBlank())) {
+            overrides.put("spring.jpa.database-platform", "org.hibernate.dialect.H2Dialect");
+            return;
+        }
+
+        if (datasourceUrl.startsWith("jdbc:postgresql:")
+                || datasourceUrl.startsWith("postgresql://")
+                || datasourceUrl.startsWith("postgres://")) {
+            overrides.put("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQLDialect");
         }
     }
 
@@ -59,29 +78,39 @@ public class SupabaseDatabaseUrlEnvironmentPostProcessor implements EnvironmentP
         String userInfo = uri.getRawUserInfo();
         if (userInfo != null && !userInfo.isBlank()) {
             String[] credentials = userInfo.split(":", 2);
-            putIfMissing(overrides, environment, "spring.datasource.username", "SPRING_DATASOURCE_USERNAME", credentials[0]);
+            putUrlCredentialIfEnvironmentMissing(
+                    overrides,
+                    environment,
+                    "spring.datasource.username",
+                    "SPRING_DATASOURCE_USERNAME",
+                    credentials[0]
+            );
 
             if (credentials.length > 1) {
-                putIfMissing(overrides, environment, "spring.datasource.password", "SPRING_DATASOURCE_PASSWORD", credentials[1]);
+                putUrlCredentialIfEnvironmentMissing(
+                        overrides,
+                        environment,
+                        "spring.datasource.password",
+                        "SPRING_DATASOURCE_PASSWORD",
+                        credentials[1]
+                );
             }
         }
 
         return overrides;
     }
 
-    private void putIfMissing(
+    private void putUrlCredentialIfEnvironmentMissing(
             Map<String, Object> overrides,
             ConfigurableEnvironment environment,
             String propertyName,
             String environmentName,
             String value
     ) {
-        String current = environment.getProperty(environmentName);
-        if (current == null || current.isBlank()) {
-            current = environment.getProperty(propertyName);
-        }
-
-        if ((current == null || current.isBlank()) && value != null && !value.isBlank()) {
+        String explicitEnvironmentValue = environment.getProperty(environmentName);
+        if ((explicitEnvironmentValue == null || explicitEnvironmentValue.isBlank())
+                && value != null
+                && !value.isBlank()) {
             overrides.put(propertyName, URLDecoder.decode(value, StandardCharsets.UTF_8));
         }
     }
