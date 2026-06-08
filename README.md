@@ -73,8 +73,8 @@ mvn test
 | Kevin Anderson |KevinAFS |
 | Guilherme Araujo |Guilhermegg-06 |
 | Luis Henrique | |
-| Gabriel Tupinambá | |
+| Gabriel Tupinambá de Carvalho | |
 
 ---
 
-Disciplina: Projeto de Programação
+Disciplina: Projeto de Progamação
