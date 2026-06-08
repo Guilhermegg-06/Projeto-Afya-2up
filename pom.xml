@@ -60,6 +60,7 @@
         </dependency>
     </dependencies>
     <build>
+        <sourceDirectory>src/presentation</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
