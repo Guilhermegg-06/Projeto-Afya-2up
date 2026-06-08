@@ -57,10 +57,11 @@ public class EventoEntity {
 
     public EventoEntity(String titulo, String descricao, LocalDate dataInicio, LocalDate dataFim, String local,
                         Integer capacidade, String status, List<String> etiquetas) {
+        PeriodoEvento periodo = new PeriodoEvento(dataInicio, dataFim);
         this.titulo = titulo;
         this.descricao = descricao;
-        this.dataInicio = dataInicio;
-        this.dataFim = dataFim;
+        this.dataInicio = periodo.inicio();
+        this.dataFim = periodo.fim();
         this.local = local;
         this.capacidade = capacidade;
         this.status = status;
@@ -84,10 +85,11 @@ public class EventoEntity {
 
     public void atualizar(String titulo, String descricao, LocalDate dataInicio, LocalDate dataFim, String local,
                           Integer capacidade, String status, List<String> etiquetas) {
+        PeriodoEvento periodo = new PeriodoEvento(dataInicio, dataFim);
         this.titulo = titulo;
         this.descricao = descricao;
-        this.dataInicio = dataInicio;
-        this.dataFim = dataFim;
+        this.dataInicio = periodo.inicio();
+        this.dataFim = periodo.fim();
         this.local = local;
         this.capacidade = capacidade;
         this.status = status;

@@ -1,0 +1,14 @@
+{
+  "curso": "Projeto de Programacao",
+  "disciplina": "Orientacao a Objetos",
+  "tema_escolhido": "6 - Plataforma de Gestao de Eventos Academicos e Emissao de Certificados",
+  "linguagem": "Java e JavaScript",
+  "gerenciador_dependencias": "Maven e NPM",
+  "integrantes": [
+    {"nome": "Arthur Barbosa", "github_username": "Arthurz11"},
+    {"nome": "Kevin Anderson", "github_username": "KevinAFS"},
+    {"nome": "Guilherme Araujo", "github_username": "Guilhermegg-06"},
+    {"nome": "Luis Henrique", "github_username": ""},
+    {"nome": "Gabriel Tupinamba", "github_username": ""}
+  ]
+}

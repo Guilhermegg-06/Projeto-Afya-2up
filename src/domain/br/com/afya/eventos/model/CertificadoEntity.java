@@ -48,7 +48,7 @@ public class CertificadoEntity {
     public CertificadoEntity(Long alunoId, AtividadeEntity atividade, String codigo) {
         this.alunoId = alunoId;
         this.atividade = atividade;
-        this.codigo = codigo;
+        this.codigo = new CodigoCertificado(codigo).valor();
         this.cargaHoraria = atividade.getCargaHoraria();
     }
 
