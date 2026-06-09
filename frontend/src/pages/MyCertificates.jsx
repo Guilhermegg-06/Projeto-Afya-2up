@@ -6,6 +6,7 @@ import SearchInput from "../components/SearchInput";
 import {
     gerarCertificado,
     listarCertificadosDoAluno,
+    listarInscricoesDoAluno,
     urlImagemCertificado,
     validarCertificado,
 } from "../services/api";
@@ -13,24 +14,27 @@ import { alunoIdAtual } from "../services/session";
 
 export default function MyCertificates() {
     const [alunoId, setAlunoId] = useState(() => alunoIdAtual());
-    const [eventoId, setEventoId] = useState("");
-    const [atividadeId, setAtividadeId] = useState("");
     const [certificates, setCertificates] = useState([]);
+    const [registrations, setRegistrations] = useState([]);
     const [codigo, setCodigo] = useState("");
     const [validationResult, setValidationResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    async function loadCertificates(targetAlunoId = alunoId) {
+    async function loadData(targetAlunoId = alunoId) {
         try {
             setLoading(true);
             setError("");
 
-            const list = await listarCertificadosDoAluno(targetAlunoId);
-            setCertificates(list ?? []);
+            const [certificateList, registrationList] = await Promise.all([
+                listarCertificadosDoAluno(targetAlunoId),
+                listarInscricoesDoAluno(targetAlunoId),
+            ]);
+            setCertificates(certificateList ?? []);
+            setRegistrations(registrationList ?? []);
         } catch {
-            setError("Nao foi possivel carregar os certificados no momento.");
+            setError("Nao foi possivel carregar seus certificados no momento.");
         } finally {
             setLoading(false);
         }
@@ -41,13 +45,18 @@ export default function MyCertificates() {
 
         (async () => {
             try {
-                const list = await listarCertificadosDoAluno(alunoIdAtual());
+                const currentAlunoId = alunoIdAtual();
+                const [certificateList, registrationList] = await Promise.all([
+                    listarCertificadosDoAluno(currentAlunoId),
+                    listarInscricoesDoAluno(currentAlunoId),
+                ]);
                 if (!cancelled) {
-                    setCertificates(list ?? []);
+                    setCertificates(certificateList ?? []);
+                    setRegistrations(registrationList ?? []);
                 }
             } catch {
                 if (!cancelled) {
-                    setError("Nao foi possivel carregar os certificados no momento.");
+                    setError("Nao foi possivel carregar seus certificados no momento.");
                 }
             } finally {
                 if (!cancelled) {
@@ -63,7 +72,7 @@ export default function MyCertificates() {
 
     async function handleSubmit(event) {
         event.preventDefault();
-        await loadCertificates(alunoId.trim() || alunoIdAtual());
+        await loadData(alunoId.trim() || alunoIdAtual());
     }
 
     async function handleValidate(event) {
@@ -78,22 +87,16 @@ export default function MyCertificates() {
             setMessage("");
             const result = await validarCertificado(codigo.trim());
             setValidationResult(result);
-            setMessage(
-                result?.validado
-                    ? "Certificado validado com sucesso."
-                    : "Certificado localizado, mas ainda nao validado.",
-            );
+            setMessage(result?.validado ? "Certificado validado com sucesso." : "Certificado localizado, mas pendente.");
         } catch {
             setValidationResult(null);
             setMessage("Nao foi possivel validar o certificado informado.");
         }
     }
 
-    async function handleGenerate(event) {
-        event.preventDefault();
-
-        if (!atividadeId.trim()) {
-            setMessage("Informe a atividade para emitir o certificado.");
+    async function handleGenerate(registration) {
+        if (registration.presenca !== "Confirmada") {
+            setMessage("O coordenador ainda precisa confirmar sua presenca neste curso.");
             return;
         }
 
@@ -101,19 +104,22 @@ export default function MyCertificates() {
             setMessage("");
             const certificado = await gerarCertificado({
                 alunoId: Number(alunoId.trim() || alunoIdAtual()),
-                eventoId: eventoId.trim() ? Number(eventoId) : null,
-                atividadeId: Number(atividadeId),
+                cursoId: Number(registration.cursoId),
             });
             setCodigo(certificado.codigo);
-            setMessage("Certificado emitido. Agora voce pode validar ou abrir a imagem.");
-            await loadCertificates(alunoId.trim() || alunoIdAtual());
+            setMessage("Certificado emitido. O codigo ja esta pronto para validacao.");
+            await loadData(alunoId.trim() || alunoIdAtual());
         } catch (error) {
             if (error.status === 409) {
-                setMessage("A presenca ainda nao foi confirmada para esta atividade.");
+                setMessage("A presenca ainda nao foi confirmada para este curso.");
                 return;
             }
-            setMessage("Nao foi possivel emitir o certificado. Confira inscricao e presenca.");
+            setMessage("Nao foi possivel emitir o certificado deste curso.");
         }
+    }
+
+    function certificateForCourse(courseId) {
+        return certificates.find((certificate) => Number(certificate.cursoId) === Number(courseId));
     }
 
     return (
@@ -126,8 +132,8 @@ export default function MyCertificates() {
 
                 <h1>Meus certificados</h1>
                 <p>
-                    Consulte certificados emitidos, valide codigos e abra a imagem oficial
-                    quando precisar comprovar participacao.
+                    Depois que o coordenador confirma sua presenca no curso, voce pode
+                    emitir o certificado e abrir a imagem oficial.
                 </p>
 
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -146,81 +152,35 @@ export default function MyCertificates() {
                     </label>
 
                     <button className="btn btn-primary" type="submit">
-                        Atualizar certificados
+                        Atualizar dados
                     </button>
                 </form>
             </section>
 
-            {message ? (
-                <section className="card" style={{ marginTop: 16 }}>
-                    {message}
-                </section>
-            ) : null}
+            {message ? <section className="card" style={{ marginTop: 16 }}>{message}</section> : null}
 
             {validationResult ? (
                 <section className="card" style={{ marginTop: 16 }}>
                     <h2>Resultado da validacao</h2>
                     <p>Codigo: {validationResult.codigo}</p>
-                    <p>Atividade: {validationResult.atividadeTitulo ?? validationResult.atividadeId}</p>
+                    <p>Curso: {validationResult.cursoTitulo ?? `Curso ${validationResult.cursoId}`}</p>
                     <p>Status: {validationResult.validado ? "Valido" : "Pendente"}</p>
-                    <a
-                        className="btn btn-primary"
-                        href={urlImagemCertificado(validationResult.codigo)}
-                        target="_blank"
-                        rel="noreferrer"
-                    >
+                    <a className="btn btn-primary" href={urlImagemCertificado(validationResult.codigo)} target="_blank" rel="noreferrer">
                         Abrir certificado em imagem
                     </a>
                 </section>
             ) : null}
-
-            <section className="card" style={{ marginTop: 16 }}>
-                <h2>Emitir certificado</h2>
-                <p>
-                    O certificado so e gerado quando o aluno esta inscrito e a presenca foi
-                    confirmada pelo coordenador.
-                </p>
-                <form className="form" onSubmit={handleGenerate} style={{ marginTop: 24 }}>
-                    <label className="field">
-                        <span>Evento ID</span>
-                        <input
-                            className="input"
-                            type="number"
-                            min="1"
-                            value={eventoId}
-                            onChange={(event) => setEventoId(event.target.value)}
-                            placeholder="Opcional"
-                        />
-                    </label>
-                    <label className="field">
-                        <span>Atividade ID</span>
-                        <input
-                            className="input"
-                            type="number"
-                            min="1"
-                            value={atividadeId}
-                            onChange={(event) => setAtividadeId(event.target.value)}
-                            placeholder="ID da atividade concluida"
-                        />
-                    </label>
-                    <button className="btn btn-primary" type="submit">
-                        Emitir certificado
-                    </button>
-                </form>
-            </section>
 
             <section style={{ marginTop: 24 }}>
                 <div className="section-heading">
                     <div>
                         <span className="section-heading__eyebrow">
                             <Ticket size={16} />
-                            Historico de emissao
+                            Cursos inscritos
                         </span>
-                        <h2>Certificados vinculados</h2>
+                        <h2>Emitir certificado</h2>
                     </div>
-                    <p>
-                        Cada certificado possui um codigo unico para consulta e comprovacao.
-                    </p>
+                    <p>O botao de emissao fica disponivel quando sua presenca estiver confirmada.</p>
                 </div>
 
                 {loading ? (
@@ -229,47 +189,57 @@ export default function MyCertificates() {
                     </div>
                 ) : error ? (
                     <div className="card">{error}</div>
-                ) : certificates.length === 0 ? (
-                    <div className="card">Nenhum certificado encontrado para este aluno.</div>
+                ) : registrations.length === 0 ? (
+                    <div className="card">Nenhuma inscricao encontrada para este aluno.</div>
                 ) : (
                     <div className="events-list">
-                        {certificates.map((certificate) => (
-                            <article className="event-card" key={certificate.codigo}>
-                                <div className="event-card__header">
-                                    <span className="event-chip">
-                                        <ShieldCheck size={14} />
-                                        {certificate.validado ? "Valido" : "Pendente"}
-                                    </span>
-                                    <span className="event-date">Codigo {certificate.codigo}</span>
-                                </div>
+                        {registrations.map((registration) => {
+                            const certificate = certificateForCourse(registration.cursoId);
+                            return (
+                                <article className="event-card" key={registration.id}>
+                                    <div className="event-card__header">
+                                        <span className="event-chip">{registration.presenca}</span>
+                                        <span className="event-date">Inscricao #{registration.id}</span>
+                                    </div>
 
-                                <h3>Evento #{certificate.eventoId}</h3>
-                                <p>{certificate.atividadeTitulo}</p>
-                                <p>Aluno: {certificate.alunoId}</p>
+                                    <h3>{registration.cursoTitulo || `Curso ${registration.cursoId}`}</h3>
+                                    <p>Status: {registration.status}</p>
 
-                                <div className="event-card__footer">
-                                    <strong>ID {certificate.id}</strong>
-                                    <button
-                                        className="btn btn-secondary"
-                                        type="button"
-                                        onClick={() => setCodigo(certificate.codigo)}
-                                    >
-                                        <ScanSearch size={16} />
-                                        Validar codigo
-                                    </button>
-                                    <a
-                                        className="btn btn-primary"
-                                        href={urlImagemCertificado(certificate.codigo)}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        Ver imagem
-                                    </a>
-                                </div>
-                            </article>
-                        ))}
+                                    <div className="event-card__footer">
+                                        {certificate ? <strong>Codigo {certificate.codigo}</strong> : <strong>Aguardando emissao</strong>}
+                                        {certificate ? (
+                                            <a className="btn btn-primary" href={urlImagemCertificado(certificate.codigo)} target="_blank" rel="noreferrer">
+                                                Ver certificado
+                                            </a>
+                                        ) : (
+                                            <button
+                                                className="btn btn-primary"
+                                                type="button"
+                                                disabled={registration.presenca !== "Confirmada"}
+                                                onClick={() => handleGenerate(registration)}
+                                            >
+                                                Emitir certificado
+                                            </button>
+                                        )}
+                                    </div>
+                                </article>
+                            );
+                        })}
                     </div>
                 )}
+            </section>
+
+            <section style={{ marginTop: 24 }}>
+                <div className="section-heading">
+                    <div>
+                        <span className="section-heading__eyebrow">
+                            <ShieldCheck size={16} />
+                            Validacao publica
+                        </span>
+                        <h2>Validar codigo</h2>
+                    </div>
+                    <p>Use o codigo do certificado para conferir se ele e valido.</p>
+                </div>
 
                 <form className="form" onSubmit={handleValidate} style={{ marginTop: 24 }}>
                     <label className="field">
@@ -284,13 +254,14 @@ export default function MyCertificates() {
                     </label>
 
                     <button className="btn btn-primary" type="submit">
+                        <ScanSearch size={16} />
                         Validar certificado
                     </button>
                 </form>
 
                 <div style={{ marginTop: 18 }}>
-                    <Link className="btn btn-secondary" to="/eventos">
-                        Voltar para eventos
+                    <Link className="btn btn-secondary" to="/cursos">
+                        Voltar para cursos
                     </Link>
                 </div>
             </section>

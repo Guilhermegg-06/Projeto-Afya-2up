@@ -56,10 +56,33 @@ public final class ApiDtos {
     ) {
     }
 
+    public record CursoRequest(
+            String titulo,
+            String descricao,
+            String instrutor,
+            Integer vagas,
+            String horario,
+            String status
+    ) {
+    }
+
+    public record CursoResponse(
+            Long id,
+            String titulo,
+            String descricao,
+            String instrutor,
+            Integer vagas,
+            Integer ocupadas,
+            String horario,
+            String status
+    ) {
+    }
+
     public record InscricaoRequest(
             Long alunoId,
             Long eventoId,
-            Long atividadeId
+            Long atividadeId,
+            Long cursoId
     ) {
     }
 
@@ -69,6 +92,8 @@ public final class ApiDtos {
             String alunoNome,
             Long eventoId,
             Long atividadeId,
+            Long cursoId,
+            String cursoTitulo,
             String status,
             String presenca
     ) {
@@ -76,6 +101,7 @@ public final class ApiDtos {
 
     public record PresencaRequest(
             Long atividadeId,
+            Long cursoId,
             Long inscricaoId,
             Boolean presente
     ) {
@@ -84,6 +110,7 @@ public final class ApiDtos {
     public record PresencaResponse(
             Long id,
             Long atividadeId,
+            Long cursoId,
             Long inscricaoId,
             Boolean presente
     ) {
@@ -92,7 +119,8 @@ public final class ApiDtos {
     public record CertificadoGerarRequest(
             Long alunoId,
             Long eventoId,
-            Long atividadeId
+            Long atividadeId,
+            Long cursoId
     ) {
     }
 
@@ -101,7 +129,9 @@ public final class ApiDtos {
             Long alunoId,
             Long eventoId,
             Long atividadeId,
+            Long cursoId,
             String atividadeTitulo,
+            String cursoTitulo,
             String codigo,
             Boolean validado
     ) {

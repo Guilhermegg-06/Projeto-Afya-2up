@@ -85,8 +85,8 @@ export default function Login() {
                     <h1>Entre para organizar seus cursos sem perder tempo.</h1>
 
                     <p>
-                        Acompanhe eventos, atividades abertas, favoritos e certificados em
-                        uma area feita para uso diario, limpa e objetiva.
+                        Acompanhe cursos, inscricoes, favoritos e certificados em uma area
+                        feita para uso diario, limpa e objetiva.
                     </p>
 
                     <div className="login-statline" aria-label="Resumo do sistema">

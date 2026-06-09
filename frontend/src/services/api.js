@@ -106,6 +106,26 @@ function normalizarAtividade(atividade) {
     };
 }
 
+function normalizarCurso(curso) {
+    if (!curso) {
+        return null;
+    }
+
+    const vagas = Number(curso.vagas ?? curso.vacancies ?? curso.capacidade ?? 0);
+    const ocupadas = Number(curso.ocupadas ?? curso.filled ?? 0);
+
+    return {
+        id: curso.id,
+        titulo: curso.titulo ?? curso.title ?? "",
+        descricao: curso.descricao ?? curso.description ?? "",
+        instrutor: curso.instrutor ?? curso.palestrante ?? curso.speaker ?? "",
+        vagas,
+        ocupadas,
+        horario: curso.horario ?? curso.time ?? "",
+        status: curso.status ?? (vagas > 0 && ocupadas >= vagas ? "Lotado" : "Inscricoes abertas"),
+    };
+}
+
 function normalizarInscricao(inscricao) {
     if (!inscricao) {
         return null;
@@ -117,6 +137,8 @@ function normalizarInscricao(inscricao) {
         alunoNome: inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`,
         eventoId: inscricao.eventoId,
         atividadeId: inscricao.atividadeId,
+        cursoId: inscricao.cursoId ?? inscricao.atividadeId,
+        cursoTitulo: inscricao.cursoTitulo ?? inscricao.atividadeTitulo ?? "",
         status: inscricao.status ?? "Inscrito",
         presenca: inscricao.presenca ?? "Pendente",
     };
@@ -130,6 +152,7 @@ function normalizarPresenca(presenca) {
     return {
         id: presenca.id,
         atividadeId: presenca.atividadeId,
+        cursoId: presenca.cursoId ?? presenca.atividadeId,
         inscricaoId: presenca.inscricaoId,
         presente: Boolean(presenca.presente),
     };
@@ -145,10 +168,74 @@ function normalizarCertificado(certificado) {
         alunoId: certificado.alunoId,
         eventoId: certificado.eventoId,
         atividadeId: certificado.atividadeId ?? null,
+        cursoId: certificado.cursoId ?? certificado.atividadeId ?? null,
         atividadeTitulo: certificado.atividadeTitulo ?? certificado.atividade ?? "",
+        cursoTitulo: certificado.cursoTitulo ?? certificado.atividadeTitulo ?? certificado.atividade ?? "",
         codigo: certificado.codigo,
         validado: Boolean(certificado.validado),
     };
+}
+
+function fallbackCursos() {
+    return Object.values(mockAtividadesPorEvento)
+        .flat()
+        .map(normalizarCurso);
+}
+
+export async function listarCursos() {
+    const fallback = fallbackCursos();
+    const response = await withFallback(() => request("/cursos"), fallback);
+    return Array.isArray(response) ? response.map(normalizarCurso) : fallback;
+}
+
+export async function obterCurso(id) {
+    const fallback = fallbackCursos().find((curso) => Number(curso.id) === Number(id)) ?? null;
+    const response = await withFallback(() => request(`/cursos/${id}`), fallback);
+    return normalizarCurso(response);
+}
+
+export async function criarCurso(payload) {
+    const result = await request("/cursos", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+    return normalizarCurso(result);
+}
+
+export async function atualizarCurso(id, payload) {
+    const result = await request(`/cursos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+    return normalizarCurso(result);
+}
+
+export async function deletarCurso(id) {
+    await request(`/cursos/${id}`, {
+        method: "DELETE",
+    });
+}
+
+export async function listarInscricoesDoCurso(cursoId) {
+    const fallback = clone(mockInscricoes).filter(
+        (item) => Number(item.atividadeId) === Number(cursoId),
+    );
+    const response = await withFallback(
+        () => request(`/cursos/${cursoId}/inscricoes`),
+        fallback,
+    );
+    return Array.isArray(response) ? response.map(normalizarInscricao) : fallback;
+}
+
+export async function listarPresencasDoCurso(cursoId) {
+    const fallback = clone(mockPresencas).filter(
+        (item) => Number(item.atividadeId) === Number(cursoId),
+    );
+    const response = await withFallback(
+        () => request(`/cursos/${cursoId}/presencas`),
+        fallback,
+    );
+    return Array.isArray(response) ? response.map(normalizarPresenca) : fallback;
 }
 
 export async function listarEventos() {

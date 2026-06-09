@@ -19,9 +19,9 @@ export default function AppRoutes() {
                 <Route path="/cadastro" element={<Register />} />
                 <Route path="/aluno" element={<StudentDashboard />} />
                 <Route path="/coordenador" element={<CoordinatorDashboard />} />
-                <Route path="/coordenador/eventos" element={<AdminEvents />} />
-                <Route path="/eventos" element={<Events />} />
-                <Route path="/eventos/:id" element={<EventDetails />} />
+                <Route path="/coordenador/cursos" element={<AdminEvents />} />
+                <Route path="/cursos" element={<Events />} />
+                <Route path="/cursos/:id" element={<EventDetails />} />
                 <Route path="/minhas-inscricoes" element={<MyRegistrations />} />
                 <Route path="/validar-presenca" element={<AttendanceValidation />} />
                 <Route path="/meus-certificados" element={<MyCertificates />} />

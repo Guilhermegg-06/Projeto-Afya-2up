@@ -4,6 +4,8 @@ import br.com.afya.eventos.dto.ApiDtos.AtividadeRequest;
 import br.com.afya.eventos.dto.ApiDtos.AtividadeResponse;
 import br.com.afya.eventos.dto.ApiDtos.CertificadoGerarRequest;
 import br.com.afya.eventos.dto.ApiDtos.CertificadoResponse;
+import br.com.afya.eventos.dto.ApiDtos.CursoRequest;
+import br.com.afya.eventos.dto.ApiDtos.CursoResponse;
 import br.com.afya.eventos.dto.ApiDtos.EventoRequest;
 import br.com.afya.eventos.dto.ApiDtos.EventoResponse;
 import br.com.afya.eventos.dto.ApiDtos.InscricaoRequest;
@@ -179,23 +181,71 @@ public class CatalogoAcademicoService {
         atividadeRepository.delete(atividade);
     }
 
+    @Transactional(readOnly = true)
+    public List<CursoResponse> listarCursos() {
+        return atividadeRepository.findAll().stream()
+                .map(this::toCursoResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CursoResponse buscarCurso(Long id) {
+        return atividadeRepository.findById(id)
+                .map(this::toCursoResponse)
+                .orElse(null);
+    }
+
+    @Transactional
+    public CursoResponse criarCurso(CursoRequest request) {
+        EventoEntity catalogo = garantirCatalogoDeCursos();
+        AtividadeEntity curso = new AtividadeEntity(
+                catalogo,
+                orDefault(request.titulo(), "Novo curso"),
+                orDefault(request.descricao(), ""),
+                orDefault(request.instrutor(), "Instrutor nao informado"),
+                request.vagas() == null ? 0 : request.vagas(),
+                orDefault(request.horario(), "Horario a definir"),
+                "Curso",
+                LocalDateTime.now().plusDays(1),
+                LocalDateTime.now().plusDays(1).plusHours(1)
+        );
+        return toCursoResponse(atividadeRepository.save(curso));
+    }
+
+    @Transactional
+    public CursoResponse atualizarCurso(Long id, CursoRequest request) {
+        AtividadeEntity curso = exigirAtividade(id);
+        curso.atualizar(
+                orDefault(request.titulo(), curso.getTitulo()),
+                orDefault(request.descricao(), curso.getDescricao()),
+                orDefault(request.instrutor(), curso.getPalestrante()),
+                request.vagas() == null ? curso.getVagas() : request.vagas(),
+                orDefault(request.horario(), curso.getHorario()),
+                "Curso"
+        );
+        return toCursoResponse(curso);
+    }
+
+    @Transactional
+    public void deletarCurso(Long id) {
+        deletarAtividade(id);
+    }
+
     @Transactional
     public InscricaoResponse criarInscricao(InscricaoRequest request) {
         if (request.alunoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alunoId e obrigatorio");
         }
-        if (request.atividadeId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "atividadeId e obrigatorio");
-        }
+        Long cursoId = resolverCursoId(request.atividadeId(), request.cursoId());
 
-        AtividadeEntity atividade = atividadeRepository.findByIdForUpdate(request.atividadeId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "atividade nao encontrada"));
+        AtividadeEntity atividade = atividadeRepository.findByIdForUpdate(cursoId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "curso nao encontrado"));
         Long eventoId = request.eventoId() == null ? atividade.getEvento().getId() : request.eventoId();
 
         if (!atividade.getEvento().getId().equals(eventoId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "atividade nao pertence ao evento informado");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "curso nao pertence ao catalogo informado");
         }
-        if (inscricaoRepository.existsByAlunoIdAndAtividade_Id(request.alunoId(), request.atividadeId())) {
+        if (inscricaoRepository.existsByAlunoIdAndAtividade_Id(request.alunoId(), cursoId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "inscricao ja existe");
         }
 
@@ -229,7 +279,7 @@ public class CatalogoAcademicoService {
         InscricaoEntity inscricao = inscricaoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "inscricao nao encontrada"));
         AtividadeEntity atividade = atividadeRepository.findByIdForUpdate(inscricao.getAtividade().getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "atividade nao encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "curso nao encontrado"));
 
         presencaRepository.findByInscricao_Id(id).ifPresent(presencaRepository::delete);
         certificadoRepository.findByAlunoIdAndAtividade_Id(inscricao.getAlunoId(), atividade.getId()).ifPresent(certificadoRepository::delete);
@@ -239,17 +289,15 @@ public class CatalogoAcademicoService {
 
     @Transactional
     public PresencaResponse registrarPresenca(PresencaRequest request) {
-        if (request.atividadeId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "atividadeId e obrigatorio");
-        }
+        Long cursoId = resolverCursoId(request.atividadeId(), request.cursoId());
         if (request.inscricaoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricaoId e obrigatorio");
         }
 
         InscricaoEntity inscricao = inscricaoRepository.findById(request.inscricaoId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "inscricao nao encontrada"));
-        if (!inscricao.getAtividade().getId().equals(request.atividadeId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricao nao pertence a atividade informada");
+        if (!inscricao.getAtividade().getId().equals(cursoId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricao nao pertence ao curso informado");
         }
 
         Boolean presente = request.presente() == null ? Boolean.TRUE : request.presente();
@@ -273,23 +321,24 @@ public class CatalogoAcademicoService {
 
     @Transactional
     public CertificadoResponse gerarCertificado(CertificadoGerarRequest request) {
-        if (request.alunoId() == null || request.atividadeId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alunoId e atividadeId sao obrigatorios");
+        Long cursoId = resolverCursoId(request.atividadeId(), request.cursoId());
+        if (request.alunoId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alunoId e obrigatorio");
         }
 
-        AtividadeEntity atividade = exigirAtividade(request.atividadeId());
+        AtividadeEntity atividade = exigirAtividade(cursoId);
         Long eventoId = request.eventoId() == null ? atividade.getEvento().getId() : request.eventoId();
         if (!atividade.getEvento().getId().equals(eventoId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "atividade nao pertence ao evento informado");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "curso nao pertence ao catalogo informado");
         }
 
-        InscricaoEntity inscricao = inscricaoRepository.findByAlunoIdAndAtividade_Id(request.alunoId(), request.atividadeId())
+        InscricaoEntity inscricao = inscricaoRepository.findByAlunoIdAndAtividade_Id(request.alunoId(), cursoId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricao nao encontrada"));
         if (!presencaRepository.existsByInscricao_IdAndPresenteTrue(inscricao.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "presenca ainda nao confirmada");
         }
 
-        CertificadoEntity certificado = certificadoRepository.findByAlunoIdAndAtividade_Id(request.alunoId(), request.atividadeId())
+        CertificadoEntity certificado = certificadoRepository.findByAlunoIdAndAtividade_Id(request.alunoId(), cursoId)
                 .orElseGet(() -> certificadoRepository.save(new CertificadoEntity(
                         request.alunoId(),
                         atividade,
@@ -379,7 +428,7 @@ public class CatalogoAcademicoService {
 
     private AtividadeEntity exigirAtividade(Long id) {
         return atividadeRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "atividade nao encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "curso nao encontrado"));
     }
 
     private EventoResponse toEventoResponse(EventoEntity evento) {
@@ -417,6 +466,23 @@ public class CatalogoAcademicoService {
         );
     }
 
+    private CursoResponse toCursoResponse(AtividadeEntity curso) {
+        int vagas = curso.getVagas() == null ? 0 : curso.getVagas();
+        int ocupadas = curso.getOcupadas() == null ? 0 : curso.getOcupadas();
+        String status = vagas > 0 && ocupadas >= vagas ? "Lotado" : "Inscricoes abertas";
+
+        return new CursoResponse(
+                curso.getId(),
+                curso.getTitulo(),
+                curso.getDescricao(),
+                curso.getPalestrante(),
+                vagas,
+                ocupadas,
+                curso.getHorario(),
+                status
+        );
+    }
+
     private InscricaoResponse toInscricaoResponse(InscricaoEntity inscricao) {
         AtividadeEntity atividade = inscricao.getAtividade();
         String alunoNome = participanteRepository.findById(inscricao.getAlunoId())
@@ -429,6 +495,8 @@ public class CatalogoAcademicoService {
                 alunoNome,
                 atividade.getEvento().getId(),
                 atividade.getId(),
+                atividade.getId(),
+                atividade.getTitulo(),
                 inscricao.getStatus(),
                 inscricao.getPresenca()
         );
@@ -438,6 +506,7 @@ public class CatalogoAcademicoService {
         InscricaoEntity inscricao = presenca.getInscricao();
         return new PresencaResponse(
                 presenca.getId(),
+                inscricao.getAtividade().getId(),
                 inscricao.getAtividade().getId(),
                 inscricao.getId(),
                 presenca.getPresente()
@@ -451,10 +520,41 @@ public class CatalogoAcademicoService {
                 certificado.getAlunoId(),
                 atividade.getEvento().getId(),
                 atividade.getId(),
+                atividade.getId(),
+                atividade.getTitulo(),
                 atividade.getTitulo(),
                 certificado.getCodigo(),
                 certificado.getValidado()
         );
+    }
+
+    private Long resolverCursoId(Long atividadeId, Long cursoId) {
+        Long resolved = cursoId == null ? atividadeId : cursoId;
+        if (resolved == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "cursoId e obrigatorio");
+        }
+        return resolved;
+    }
+
+    private EventoEntity garantirCatalogoDeCursos() {
+        CoordenadorEntity coordenador = garantirCoordenadorPadrao();
+        return eventoRepository.findAll().stream()
+                .filter(evento -> "Catalogo de Cursos AMRY".equalsIgnoreCase(evento.getTitulo()))
+                .findFirst()
+                .orElseGet(() -> {
+                    EventoEntity catalogo = new EventoEntity(
+                            "Catalogo de Cursos AMRY",
+                            "Agrupador tecnico dos cursos da plataforma.",
+                            LocalDate.now(),
+                            LocalDate.now().plusYears(1),
+                            "Online",
+                            1000,
+                            "Inscricoes abertas",
+                            List.of("Cursos")
+                    );
+                    catalogo.definirCoordenadorId(coordenador.getId());
+                    return eventoRepository.save(catalogo);
+                });
     }
 
     private CoordenadorEntity garantirCoordenadorPadrao() {

@@ -3,14 +3,14 @@ import { BadgeCheck, BookOpen, GraduationCap } from "lucide-react";
 
 const actions = [
     {
-        title: "Eventos disponiveis",
-        description: "Veja a programacao aberta e escolha atividades para participar.",
-        to: "/eventos",
+        title: "Cursos disponiveis",
+        description: "Veja os cursos abertos e escolha onde quer se inscrever.",
+        to: "/cursos",
         icon: BookOpen,
     },
     {
         title: "Minhas inscricoes",
-        description: "Acompanhe status, presenca e atividades ja escolhidas.",
+        description: "Acompanhe status, presenca e cursos ja escolhidos.",
         to: "/minhas-inscricoes",
         icon: GraduationCap,
     },

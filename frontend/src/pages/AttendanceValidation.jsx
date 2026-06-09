@@ -1,23 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, ClipboardCheck, ClipboardList, UserRound } from "lucide-react";
 import Loader from "../components/Loader";
-import SearchInput from "../components/SearchInput";
-import { criarPresenca, listarInscricoesDaAtividade, listarPresencasDaAtividade } from "../services/api";
+import {
+    criarPresenca,
+    listarCursos,
+    listarInscricoesDoCurso,
+    listarPresencasDoCurso,
+} from "../services/api";
 
 export default function AttendanceValidation() {
-    const [atividadeId, setAtividadeId] = useState("101");
-    const [inscricaoId, setInscricaoId] = useState("1");
-    const [presente, setPresente] = useState(true);
+    const [courses, setCourses] = useState([]);
+    const [cursoId, setCursoId] = useState("");
     const [presencas, setPresencas] = useState([]);
     const [inscricoes, setInscricoes] = useState([]);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
 
-    async function loadPresencas(targetAtividadeId = atividadeId) {
-        if (!targetAtividadeId.trim()) {
+    async function loadCoursesAndSelect() {
+        const list = await listarCursos();
+        setCourses(list ?? []);
+        const firstId = list?.[0]?.id ? String(list[0].id) : "";
+        setCursoId((current) => current || firstId);
+        return firstId;
+    }
+
+    async function loadPresencas(targetCursoId = cursoId) {
+        if (!targetCursoId) {
             setPresencas([]);
+            setInscricoes([]);
             return;
         }
 
@@ -25,12 +37,14 @@ export default function AttendanceValidation() {
             setLoading(true);
             setError("");
 
-            const list = await listarPresencasDaAtividade(targetAtividadeId);
-            const inscricoesList = await listarInscricoesDaAtividade(targetAtividadeId);
-            setPresencas(list ?? []);
-            setInscricoes(inscricoesList ?? []);
+            const [presenceList, registrationList] = await Promise.all([
+                listarPresencasDoCurso(targetCursoId),
+                listarInscricoesDoCurso(targetCursoId),
+            ]);
+            setPresencas(presenceList ?? []);
+            setInscricoes(registrationList ?? []);
         } catch {
-            setError("Nao foi possivel carregar as presencas desta atividade.");
+            setError("Nao foi possivel carregar as presencas deste curso.");
         } finally {
             setLoading(false);
         }
@@ -41,17 +55,18 @@ export default function AttendanceValidation() {
 
         (async () => {
             try {
-                const [list, inscricoesList] = await Promise.all([
-                    listarPresencasDaAtividade("101"),
-                    listarInscricoesDaAtividade("101"),
-                ]);
-                if (!cancelled) {
-                    setPresencas(list ?? []);
-                    setInscricoes(inscricoesList ?? []);
+                const firstId = await loadCoursesAndSelect();
+                if (!cancelled && firstId) {
+                    const [presenceList, registrationList] = await Promise.all([
+                        listarPresencasDoCurso(firstId),
+                        listarInscricoesDoCurso(firstId),
+                    ]);
+                    setPresencas(presenceList ?? []);
+                    setInscricoes(registrationList ?? []);
                 }
             } catch {
                 if (!cancelled) {
-                    setError("Nao foi possivel carregar as presencas desta atividade.");
+                    setError("Nao foi possivel carregar os cursos para presenca.");
                 }
             } finally {
                 if (!cancelled) {
@@ -65,42 +80,31 @@ export default function AttendanceValidation() {
         };
     }, []);
 
-    async function handleSubmit(event) {
-        event.preventDefault();
-
-        if (!atividadeId.trim() || !inscricaoId.trim()) {
-            setMessage("Informe a atividade e a inscricao.");
-            return;
-        }
-
-        try {
-            setMessage("");
-            await criarPresenca({
-                atividadeId: Number(atividadeId),
-                inscricaoId: Number(inscricaoId),
-                presente,
-            });
-            setMessage("Presenca registrada com sucesso.");
-            await loadPresencas(atividadeId);
-        } catch {
-            setMessage("Nao foi possivel registrar a presenca.");
-        }
+    async function handleCourseChange(event) {
+        const selected = event.target.value;
+        setCursoId(selected);
+        await loadPresencas(selected);
     }
 
     async function marcarPresenca(inscricao, presenteValor) {
         try {
             setMessage("");
             await criarPresenca({
-                atividadeId: Number(atividadeId),
+                cursoId: Number(cursoId),
                 inscricaoId: inscricao.id,
                 presente: presenteValor,
             });
             setMessage(`Presenca atualizada para ${inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`}.`);
-            await loadPresencas(atividadeId);
+            await loadPresencas(cursoId);
         } catch {
             setMessage("Nao foi possivel atualizar a presenca desta inscricao.");
         }
     }
+
+    const selectedCourse = useMemo(
+        () => courses.find((course) => String(course.id) === String(cursoId)),
+        [courses, cursoId],
+    );
 
     return (
         <main className="page">
@@ -110,60 +114,27 @@ export default function AttendanceValidation() {
                     Validacao de presenca
                 </span>
 
-                <h1>Registrar presenca</h1>
+                <h1>Registrar presenca no curso</h1>
                 <p>
-                    Informe a atividade, confira os alunos inscritos e registre quem
-                    participou de forma clara para liberar certificados.
+                    Escolha o curso, confira os alunos inscritos e marque quem participou.
+                    Essa validacao libera a emissao do certificado para o aluno.
                 </p>
 
-                <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
+                <form className="form" onSubmit={(event) => event.preventDefault()} style={{ marginTop: 24 }}>
                     <label className="field">
-                        <span>Atividade ID</span>
-                        <SearchInput
-                            name="atividadeId"
-                            type="number"
-                            inputMode="numeric"
-                            min="1"
-                            value={atividadeId}
-                            onChange={(event) => setAtividadeId(event.target.value)}
-                            placeholder="Pesquisar atividade"
-                            ariaLabel="Pesquisar presencas da atividade"
-                            buttonType="button"
-                            onButtonClick={() => loadPresencas(atividadeId)}
-                        />
+                        <span>Curso</span>
+                        <select className="input" value={cursoId} onChange={handleCourseChange}>
+                            <option value="">Selecione um curso</option>
+                            {courses.map((course) => (
+                                <option key={course.id} value={course.id}>
+                                    {course.titulo}
+                                </option>
+                            ))}
+                        </select>
                     </label>
-
-                    <label className="field">
-                        <span>Inscricao ID</span>
-                        <SearchInput
-                            name="inscricaoId"
-                            type="number"
-                            inputMode="numeric"
-                            min="1"
-                            value={inscricaoId}
-                            onChange={(event) => setInscricaoId(event.target.value)}
-                            placeholder="Pesquisar inscricao"
-                            ariaLabel="Pesquisar inscricao para presenca"
-                            buttonType="button"
-                        />
-                    </label>
-
-                    <label className="field" style={{ display: "flex", alignItems: "center" }}>
-                        <span>Presente</span>
-                        <input
-                            type="checkbox"
-                            checked={presente}
-                            onChange={(event) => setPresente(event.target.checked)}
-                            style={{ width: 18, height: 18 }}
-                        />
-                    </label>
-
-                    <button className="btn btn-primary" type="submit">
-                        <ClipboardList size={16} />
-                        Registrar presenca
-                    </button>
                 </form>
 
+                {selectedCourse ? <p style={{ marginTop: 16 }}>Curso atual: {selectedCourse.titulo}</p> : null}
                 {message ? <p style={{ marginTop: 16 }}>{message}</p> : null}
                 {error ? <p style={{ marginTop: 16 }}>{error}</p> : null}
             </section>
@@ -173,18 +144,19 @@ export default function AttendanceValidation() {
                     <div>
                         <span className="section-heading__eyebrow">
                             <ClipboardList size={16} />
-                            Inscricoes da atividade
+                            Inscricoes do curso
                         </span>
                         <h2>Marcar presenca por aluno</h2>
                     </div>
-                    <p>
-                        O coordenador escolhe uma atividade, confere as inscricoes reais
-                        e marca cada aluno como presente ou ausente.
-                    </p>
+                    <p>O coordenador confere as inscricoes reais e marca presente ou ausente.</p>
                 </div>
 
-                {loading ? null : inscricoes.length === 0 ? (
-                    <div className="card">Nenhuma inscricao encontrada para esta atividade.</div>
+                {loading ? (
+                    <div className="card">
+                        <Loader />
+                    </div>
+                ) : inscricoes.length === 0 ? (
+                    <div className="card">Nenhuma inscricao encontrada para este curso.</div>
                 ) : (
                     <div className="events-list">
                         {inscricoes.map((inscricao) => (
@@ -194,22 +166,14 @@ export default function AttendanceValidation() {
                                     <span className="event-date">{inscricao.presenca}</span>
                                 </div>
                                 <h3>{inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`}</h3>
-                                <p>Atividade {inscricao.atividadeId}</p>
+                                <p>{inscricao.cursoTitulo || `Curso ${inscricao.cursoId}`}</p>
                                 <div className="event-card__footer">
                                     <strong>{inscricao.status}</strong>
                                     <div className="event-card__actions">
-                                        <button
-                                            className="btn btn-primary"
-                                            type="button"
-                                            onClick={() => marcarPresenca(inscricao, true)}
-                                        >
+                                        <button className="btn btn-primary" type="button" onClick={() => marcarPresenca(inscricao, true)}>
                                             Presente
                                         </button>
-                                        <button
-                                            className="btn btn-secondary"
-                                            type="button"
-                                            onClick={() => marcarPresenca(inscricao, false)}
-                                        >
+                                        <button className="btn btn-secondary" type="button" onClick={() => marcarPresenca(inscricao, false)}>
                                             Ausente
                                         </button>
                                     </div>
@@ -227,19 +191,13 @@ export default function AttendanceValidation() {
                             <UserRound size={16} />
                             Presencas consultadas
                         </span>
-                        <h2>Lista da atividade atual</h2>
+                        <h2>Lista do curso atual</h2>
                     </div>
-                    <p>
-                        A listagem ajuda a conferir o que ja foi marcado nesta atividade.
-                    </p>
+                    <p>A listagem ajuda a conferir o que ja foi marcado neste curso.</p>
                 </div>
 
-                {loading ? (
-                    <div className="card">
-                        <Loader />
-                    </div>
-                ) : presencas.length === 0 ? (
-                    <div className="card">Nenhuma presenca registrada para esta atividade.</div>
+                {loading ? null : presencas.length === 0 ? (
+                    <div className="card">Nenhuma presenca registrada para este curso.</div>
                 ) : (
                     <div className="events-list">
                         {presencas.map((presenca) => (
@@ -253,7 +211,7 @@ export default function AttendanceValidation() {
                                 </div>
 
                                 <h3>Inscricao {presenca.inscricaoId}</h3>
-                                <p>Atividade {presenca.atividadeId}</p>
+                                <p>Curso {presenca.cursoId}</p>
                             </article>
                         ))}
                     </div>

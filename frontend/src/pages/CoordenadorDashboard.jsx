@@ -3,14 +3,14 @@ import { CalendarCheck, ClipboardCheck } from "lucide-react";
 
 const actions = [
     {
-        title: "Gerenciar eventos",
-        description: "Abra a lista de eventos, acompanhe ocupacao e detalhes das atividades.",
-        to: "/coordenador/eventos",
+        title: "Gerenciar cursos",
+        description: "Crie cursos, acompanhe vagas e mantenha a lista atualizada.",
+        to: "/coordenador/cursos",
         icon: CalendarCheck,
     },
     {
         title: "Validar presenca",
-        description: "Registre presencas por inscricao e confira a lista por atividade.",
+        description: "Registre presencas por inscricao e confira a lista por curso.",
         to: "/validar-presenca",
         icon: ClipboardCheck,
     },
@@ -21,7 +21,7 @@ export default function CoordinatorDashboard() {
         <main className="page dashboard-page">
             <section className="dashboard-hero">
                 <span className="section-heading__eyebrow">Area do coordenador</span>
-                <h1>Controle eventos, presencas e certificados com menos atrito.</h1>
+                <h1>Controle cursos, presencas e certificados com menos atrito.</h1>
                 <p>Painel de trabalho para operacao diaria da AMRY cursos.</p>
             </section>
 

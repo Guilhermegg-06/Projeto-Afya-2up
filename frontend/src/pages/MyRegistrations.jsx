@@ -86,8 +86,8 @@ export default function MyRegistrations() {
 
                 <h1>Minhas inscricoes</h1>
                 <p>
-                    Acompanhe suas inscricoes, status de confirmacao e presenca nas
-                    atividades escolhidas.
+                    Acompanhe suas inscricoes, status de confirmacao e presenca nos
+                    cursos escolhidos.
                 </p>
 
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -147,11 +147,11 @@ export default function MyRegistrations() {
                                     <span className="event-chip">Inscricao #{registration.id}</span>
                                     <span className="event-date">
                                         <CalendarDays size={14} />
-                                        Evento {registration.eventoId}
+                                        Curso {registration.cursoId}
                                     </span>
                                 </div>
 
-                                <h3>Atividade {registration.atividadeId}</h3>
+                                <h3>{registration.cursoTitulo || `Curso ${registration.cursoId}`}</h3>
                                 <p>Status: {formatStatus(registration.status)}</p>
                                 <p>Presenca: {registration.presenca ?? "Pendente"}</p>
 
@@ -173,8 +173,8 @@ export default function MyRegistrations() {
                 )}
 
                 <div style={{ marginTop: 18 }}>
-                    <Link className="btn btn-secondary" to="/eventos">
-                        Voltar para eventos
+                    <Link className="btn btn-secondary" to="/cursos">
+                        Voltar para cursos
                     </Link>
                 </div>
             </section>

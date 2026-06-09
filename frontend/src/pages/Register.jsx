@@ -4,7 +4,7 @@ import { BadgeCheck, GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
 import { cadastrarAluno } from "../services/api";
 
 const benefits = [
-    "Acesso aos eventos e minicursos",
+    "Acesso aos cursos disponiveis",
     "Controle de inscricoes em tempo real",
     "Certificados emitidos apos validacao",
 ];
@@ -63,11 +63,11 @@ export default function Register() {
                         Cadastro academico
                     </span>
 
-                    <h1>Crie sua conta para participar dos eventos.</h1>
+                    <h1>Crie sua conta para participar dos cursos.</h1>
 
                     <p className="auth-description">
                         Uma interface limpa, elegante e objetiva para liberar o acesso aos
-                        eventos, inscricoes e certificados da plataforma.
+                        cursos, inscricoes e certificados da plataforma.
                     </p>
 
                     <div className="auth-benefits">

@@ -77,7 +77,7 @@ public class CertificadoImagemService {
         drawCentered(g, nomeAluno, new Font("Serif", Font.BOLD, 54), 600, 405);
 
         g.setColor(new Color(50, 62, 80));
-        drawCentered(g, "voce concluiu a atividade:", new Font("SansSerif", Font.PLAIN, 28), 600, 475);
+        drawCentered(g, "voce concluiu o curso:", new Font("SansSerif", Font.PLAIN, 28), 600, 475);
 
         g.setColor(new Color(9, 31, 68));
         drawCentered(g, nomeCurso, new Font("Serif", Font.BOLD, 38), 600, 535);
