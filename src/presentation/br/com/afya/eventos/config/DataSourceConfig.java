@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class DataSourceConfig {
 
+    private static final String FALLBACK_H2_URL = "jdbc:h2:file:/tmp/amry-cursos;MODE=PostgreSQL;AUTO_SERVER=FALSE";
+
     @Bean
     public DataSource dataSource(Environment environment) {
         String rawUrl = firstValid(
@@ -22,7 +24,7 @@ public class DataSourceConfig {
         );
 
         if (rawUrl == null) {
-            throw new IllegalStateException("SPRING_DATASOURCE_URL nao configurada");
+            rawUrl = FALLBACK_H2_URL;
         }
 
         DatabaseUrl databaseUrl = normalize(rawUrl);
@@ -30,7 +32,8 @@ public class DataSourceConfig {
         String username = firstValid(
                 environment.getProperty("SPRING_DATASOURCE_USERNAME"),
                 environment.getProperty("spring.datasource.username"),
-                databaseUrl.username()
+                databaseUrl.username(),
+                rawUrl.startsWith("jdbc:h2:") ? "sa" : null
         );
         String password = firstValid(
                 environment.getProperty("SPRING_DATASOURCE_PASSWORD"),
@@ -38,14 +41,14 @@ public class DataSourceConfig {
                 databaseUrl.password()
         );
 
-        if (username == null) {
-            throw new IllegalStateException("Usuario do banco nao configurado");
-        }
-
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(databaseUrl.jdbcUrl());
-        dataSource.setUsername(username);
-        dataSource.setPassword(password == null ? "" : password);
+        if (username != null) {
+            dataSource.setUsername(username);
+        }
+        if (password != null) {
+            dataSource.setPassword(password);
+        }
         return dataSource;
     }
 
