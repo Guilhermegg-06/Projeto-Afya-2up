@@ -19,6 +19,9 @@ public class SupabaseDatabaseUrlEnvironmentPostProcessor implements EnvironmentP
         String explicitDatasourceUrl = environment.getProperty("SPRING_DATASOURCE_URL");
         String datasourceUrl = explicitDatasourceUrl;
         if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            datasourceUrl = environment.getProperty("DATABASE_URL");
+        }
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
             datasourceUrl = environment.getProperty("spring.datasource.url");
         }
 

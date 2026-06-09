@@ -17,6 +17,7 @@ public class DataSourceConfig {
     public DataSource dataSource(Environment environment) {
         String rawUrl = firstValid(
                 environment.getProperty("SPRING_DATASOURCE_URL"),
+                environment.getProperty("DATABASE_URL"),
                 environment.getProperty("spring.datasource.url")
         );
 
@@ -26,18 +27,25 @@ public class DataSourceConfig {
 
         DatabaseUrl databaseUrl = normalize(rawUrl);
 
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(databaseUrl.jdbcUrl());
-        dataSource.setUsername(firstValid(
+        String username = firstValid(
                 environment.getProperty("SPRING_DATASOURCE_USERNAME"),
                 environment.getProperty("spring.datasource.username"),
                 databaseUrl.username()
-        ));
-        dataSource.setPassword(firstValid(
+        );
+        String password = firstValid(
                 environment.getProperty("SPRING_DATASOURCE_PASSWORD"),
                 environment.getProperty("spring.datasource.password"),
                 databaseUrl.password()
-        ));
+        );
+
+        if (username == null) {
+            throw new IllegalStateException("Usuario do banco nao configurado");
+        }
+
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(databaseUrl.jdbcUrl());
+        dataSource.setUsername(username);
+        dataSource.setPassword(password == null ? "" : password);
         return dataSource;
     }
 
