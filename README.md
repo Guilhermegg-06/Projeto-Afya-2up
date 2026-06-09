@@ -2,7 +2,9 @@
 
 Plataforma de Gestão de Eventos Acadêmicos e Emissão de Certificados
 ## LINK DO SITE NA WEB: https://cursos-amry.vercel.app
-
+acesso como coordenador: Email: coordenador@amry.local
+                         Senha: admin123
+                         
 ## 📋 Sobre o Projeto
 
 Sistema desenvolvido para gerenciar eventos acadêmicos, permitindo que coordenadores criem eventos e atividades, participantes realizem inscrições e, ao final, certificados sejam emitidos automaticamente para quem teve presença confirmada.
