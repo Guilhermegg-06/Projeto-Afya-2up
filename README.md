@@ -1,6 +1,7 @@
 # Projeto-Afya-2up
 
 Plataforma de Gestão de Eventos Acadêmicos e Emissão de Certificados
+## LINK DO SITE NA WEB: https://cursos-amry.vercel.app
 
 ## 📋 Sobre o Projeto
 
