@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CircleX, Ticket, Users } from "lucide-react";
+import { BadgeCheck, CalendarDays, CircleX, Ticket, Users } from "lucide-react";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
 import { listarInscricoesDoAluno, removerInscricao } from "../services/api";
@@ -147,25 +147,34 @@ export default function MyRegistrations() {
                                     <span className="event-chip">Inscricao #{registration.id}</span>
                                     <span className="event-date">
                                         <CalendarDays size={14} />
-                                        Curso {registration.cursoId}
+                                        ID do curso: {registration.cursoId}
                                     </span>
                                 </div>
 
                                 <h3>{registration.cursoTitulo || `Curso ${registration.cursoId}`}</h3>
+                                <p>ID do curso: {registration.cursoId}</p>
                                 <p>Status: {formatStatus(registration.status)}</p>
                                 <p>Presenca: {registration.presenca ?? "Pendente"}</p>
 
                                 <div className="event-card__footer">
                                     <strong>Aluno {registration.alunoId}</strong>
-                                    <button
-                                        className="btn btn-secondary"
-                                        type="button"
-                                        onClick={() => handleDelete(registration.id)}
-                                        disabled={saving}
-                                    >
-                                        <CircleX size={16} />
-                                        Remover
-                                    </button>
+                                    <div className="event-card__actions">
+                                        {registration.presenca === "Confirmada" ? (
+                                            <Link className="btn btn-primary" to="/meus-certificados">
+                                                <BadgeCheck size={16} />
+                                                Emitir certificado
+                                            </Link>
+                                        ) : null}
+                                        <button
+                                            className="btn btn-secondary"
+                                            type="button"
+                                            onClick={() => handleDelete(registration.id)}
+                                            disabled={saving}
+                                        >
+                                            <CircleX size={16} />
+                                            Remover
+                                        </button>
+                                    </div>
                                 </div>
                             </article>
                         ))}

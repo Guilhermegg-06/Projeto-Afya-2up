@@ -203,6 +203,7 @@ export default function MyCertificates() {
                                     </div>
 
                                     <h3>{registration.cursoTitulo || `Curso ${registration.cursoId}`}</h3>
+                                    <p>ID do curso: {registration.cursoId}</p>
                                     <p>Status: {registration.status}</p>
 
                                     <div className="event-card__footer">

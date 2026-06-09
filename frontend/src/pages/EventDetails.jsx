@@ -139,6 +139,7 @@ export default function EventDetails() {
                         Detalhes do curso
                     </span>
 
+                    <span className="event-chip">ID do curso: {course.id}</span>
                     <h1>{course.title}</h1>
                     <p>{course.description}</p>
 
@@ -165,6 +166,7 @@ export default function EventDetails() {
                         Depois da inscricao, o coordenador confirma a sua presenca. Com a
                         presenca confirmada, o certificado fica disponivel na area do aluno.
                     </p>
+                    <p>ID usado no sistema: {course.id}</p>
                     <strong>{course.available} vagas restantes</strong>
                 </aside>
             </section>

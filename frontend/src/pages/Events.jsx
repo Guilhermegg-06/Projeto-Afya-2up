@@ -177,6 +177,7 @@ export default function Events() {
 
                     {hero ? (
                         <>
+                            <span className="event-chip">ID do curso: {hero.id}</span>
                             <h2>{hero.title}</h2>
                             <p>{hero.description}</p>
 
@@ -274,7 +275,7 @@ export default function Events() {
                         {filteredCourses.map((course) => (
                             <article className="event-card" key={course.id}>
                                 <div className="event-card__header">
-                                    <span className="event-chip">Curso</span>
+                                    <span className="event-chip">ID do curso: {course.id}</span>
                                     <span className="event-date">
                                         <CalendarDays size={14} />
                                         {course.time}
