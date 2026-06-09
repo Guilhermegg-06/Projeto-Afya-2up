@@ -3,10 +3,18 @@ import { Link } from "react-router-dom";
 import { BadgeCheck, ScanSearch, ShieldCheck, Ticket } from "lucide-react";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
-import { listarCertificadosDoAluno, validarCertificado } from "../services/api";
+import {
+    gerarCertificado,
+    listarCertificadosDoAluno,
+    urlImagemCertificado,
+    validarCertificado,
+} from "../services/api";
+import { alunoIdAtual } from "../services/session";
 
 export default function MyCertificates() {
-    const [alunoId, setAlunoId] = useState("1");
+    const [alunoId, setAlunoId] = useState(() => alunoIdAtual());
+    const [eventoId, setEventoId] = useState("");
+    const [atividadeId, setAtividadeId] = useState("");
     const [certificates, setCertificates] = useState([]);
     const [codigo, setCodigo] = useState("");
     const [validationResult, setValidationResult] = useState(null);
@@ -33,7 +41,7 @@ export default function MyCertificates() {
 
         (async () => {
             try {
-                const list = await listarCertificadosDoAluno("1");
+                const list = await listarCertificadosDoAluno(alunoIdAtual());
                 if (!cancelled) {
                     setCertificates(list ?? []);
                 }
@@ -55,7 +63,7 @@ export default function MyCertificates() {
 
     async function handleSubmit(event) {
         event.preventDefault();
-        await loadCertificates(alunoId.trim() || "1");
+        await loadCertificates(alunoId.trim() || alunoIdAtual());
     }
 
     async function handleValidate(event) {
@@ -78,6 +86,33 @@ export default function MyCertificates() {
         } catch {
             setValidationResult(null);
             setMessage("Nao foi possivel validar o certificado informado.");
+        }
+    }
+
+    async function handleGenerate(event) {
+        event.preventDefault();
+
+        if (!atividadeId.trim()) {
+            setMessage("Informe a atividade para emitir o certificado.");
+            return;
+        }
+
+        try {
+            setMessage("");
+            const certificado = await gerarCertificado({
+                alunoId: Number(alunoId.trim() || alunoIdAtual()),
+                eventoId: eventoId.trim() ? Number(eventoId) : null,
+                atividadeId: Number(atividadeId),
+            });
+            setCodigo(certificado.codigo);
+            setMessage("Certificado emitido. Agora voce pode validar ou abrir a imagem.");
+            await loadCertificates(alunoId.trim() || alunoIdAtual());
+        } catch (error) {
+            if (error.status === 409) {
+                setMessage("A presenca ainda nao foi confirmada para esta atividade.");
+                return;
+            }
+            setMessage("Nao foi possivel emitir o certificado. Confira inscricao e presenca.");
         }
     }
 
@@ -128,8 +163,51 @@ export default function MyCertificates() {
                     <p>Codigo: {validationResult.codigo}</p>
                     <p>Atividade: {validationResult.atividadeTitulo ?? validationResult.atividadeId}</p>
                     <p>Status: {validationResult.validado ? "Valido" : "Pendente"}</p>
+                    <a
+                        className="btn btn-primary"
+                        href={urlImagemCertificado(validationResult.codigo)}
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Abrir certificado em imagem
+                    </a>
                 </section>
             ) : null}
+
+            <section className="card" style={{ marginTop: 16 }}>
+                <h2>Emitir certificado</h2>
+                <p>
+                    O certificado so e gerado quando o aluno esta inscrito e a presenca foi
+                    confirmada pelo coordenador.
+                </p>
+                <form className="form" onSubmit={handleGenerate} style={{ marginTop: 24 }}>
+                    <label className="field">
+                        <span>Evento ID</span>
+                        <input
+                            className="input"
+                            type="number"
+                            min="1"
+                            value={eventoId}
+                            onChange={(event) => setEventoId(event.target.value)}
+                            placeholder="Opcional"
+                        />
+                    </label>
+                    <label className="field">
+                        <span>Atividade ID</span>
+                        <input
+                            className="input"
+                            type="number"
+                            min="1"
+                            value={atividadeId}
+                            onChange={(event) => setAtividadeId(event.target.value)}
+                            placeholder="ID da atividade concluida"
+                        />
+                    </label>
+                    <button className="btn btn-primary" type="submit">
+                        Emitir certificado
+                    </button>
+                </form>
+            </section>
 
             <section style={{ marginTop: 24 }}>
                 <div className="section-heading">
@@ -179,6 +257,14 @@ export default function MyCertificates() {
                                         <ScanSearch size={16} />
                                         Validar codigo
                                     </button>
+                                    <a
+                                        className="btn btn-primary"
+                                        href={urlImagemCertificado(certificate.codigo)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Ver imagem
+                                    </a>
                                 </div>
                             </article>
                         ))}

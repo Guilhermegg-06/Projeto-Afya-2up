@@ -18,6 +18,7 @@ import {
     listarAtividadesPorEvento,
     obterEvento,
 } from "../services/api";
+import { alunoIdAtual, lerUsuario } from "../services/session";
 
 const ACTIVITY_FAVORITES_KEY = "afya:favoritos:atividades";
 
@@ -124,6 +125,12 @@ export default function EventDetails() {
     }
 
     async function handleSubscribe(activity) {
+        const usuario = lerUsuario();
+        if (!usuario || usuario.perfil !== "ALUNO") {
+            setMessage("Faca login como aluno antes de se inscrever.");
+            return;
+        }
+
         if (activity.filled >= activity.vacancies) {
             setMessage("Nao ha vagas disponiveis para esta atividade.");
             return;
@@ -131,7 +138,7 @@ export default function EventDetails() {
 
         try {
             await criarInscricao({
-                alunoId: 1,
+                alunoId: Number(alunoIdAtual()),
                 eventoId: Number(id),
                 atividadeId: activity.id,
             });

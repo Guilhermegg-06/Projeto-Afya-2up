@@ -24,13 +24,21 @@ public class CoordenadorEntity {
     @Column(length = 200)
     private String instituicao;
 
+    @Column(name = "senha_hash", length = 64)
+    private String senhaHash;
+
     protected CoordenadorEntity() {
     }
 
     public CoordenadorEntity(String nome, String email, String instituicao) {
+        this(nome, email, instituicao, null);
+    }
+
+    public CoordenadorEntity(String nome, String email, String instituicao, String senhaHash) {
         this.nome = nome;
-        this.email = email;
+        this.email = email == null ? null : email.toLowerCase();
         this.instituicao = instituicao;
+        this.senhaHash = senhaHash;
     }
 
     public Long getId() {
@@ -47,5 +55,13 @@ public class CoordenadorEntity {
 
     public String getInstituicao() {
         return instituicao;
+    }
+
+    public String getSenhaHash() {
+        return senhaHash;
+    }
+
+    public void definirSenhaHash(String senhaHash) {
+        this.senhaHash = senhaHash;
     }
 }

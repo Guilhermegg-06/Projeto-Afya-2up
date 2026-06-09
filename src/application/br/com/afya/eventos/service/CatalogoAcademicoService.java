@@ -45,6 +45,7 @@ public class CatalogoAcademicoService {
     private final CertificadoRepository certificadoRepository;
     private final ParticipanteRepository participanteRepository;
     private final CoordenadorRepository coordenadorRepository;
+    private final SenhaService senhaService;
 
     public CatalogoAcademicoService(
             EventoRepository eventoRepository,
@@ -53,7 +54,8 @@ public class CatalogoAcademicoService {
             PresencaRepository presencaRepository,
             CertificadoRepository certificadoRepository,
             ParticipanteRepository participanteRepository,
-            CoordenadorRepository coordenadorRepository
+            CoordenadorRepository coordenadorRepository,
+            SenhaService senhaService
     ) {
         this.eventoRepository = eventoRepository;
         this.atividadeRepository = atividadeRepository;
@@ -62,6 +64,7 @@ public class CatalogoAcademicoService {
         this.certificadoRepository = certificadoRepository;
         this.participanteRepository = participanteRepository;
         this.coordenadorRepository = coordenadorRepository;
+        this.senhaService = senhaService;
     }
 
     @Transactional(readOnly = true)
@@ -236,12 +239,19 @@ public class CatalogoAcademicoService {
 
     @Transactional
     public PresencaResponse registrarPresenca(PresencaRequest request) {
+        if (request.atividadeId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "atividadeId e obrigatorio");
+        }
         if (request.inscricaoId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricaoId e obrigatorio");
         }
 
         InscricaoEntity inscricao = inscricaoRepository.findById(request.inscricaoId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "inscricao nao encontrada"));
+        if (!inscricao.getAtividade().getId().equals(request.atividadeId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inscricao nao pertence a atividade informada");
+        }
+
         Boolean presente = request.presente() == null ? Boolean.TRUE : request.presente();
 
         PresencaEntity presenca = presencaRepository.findByInscricao_Id(inscricao.getId())
@@ -305,12 +315,12 @@ public class CatalogoAcademicoService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void seed() {
+        CoordenadorEntity coordenador = garantirCoordenadorPadrao();
+        garantirParticipante(1L);
+
         if (eventoRepository.count() > 0) {
             return;
         }
-
-        CoordenadorEntity coordenador = garantirCoordenadorPadrao();
-        garantirParticipante(1L);
 
         EventoEntity evento1 = new EventoEntity(
                 "Semana Academica de Computacao",
@@ -409,9 +419,14 @@ public class CatalogoAcademicoService {
 
     private InscricaoResponse toInscricaoResponse(InscricaoEntity inscricao) {
         AtividadeEntity atividade = inscricao.getAtividade();
+        String alunoNome = participanteRepository.findById(inscricao.getAlunoId())
+                .map(ParticipanteEntity::getNome)
+                .orElse("Aluno " + inscricao.getAlunoId());
+
         return new InscricaoResponse(
                 inscricao.getId(),
                 inscricao.getAlunoId(),
+                alunoNome,
                 atividade.getEvento().getId(),
                 atividade.getId(),
                 inscricao.getStatus(),
@@ -444,22 +459,35 @@ public class CatalogoAcademicoService {
 
     private CoordenadorEntity garantirCoordenadorPadrao() {
         return coordenadorRepository.findByEmail("coordenador@amry.local")
+                .map(coordenador -> {
+                    if (coordenador.getSenhaHash() == null || coordenador.getSenhaHash().isBlank()) {
+                        coordenador.definirSenhaHash(senhaService.gerarHash("admin123"));
+                    }
+                    return coordenador;
+                })
                 .orElseGet(() -> coordenadorRepository.save(new CoordenadorEntity(
                         "Coordenador AMRY",
                         "coordenador@amry.local",
-                        "AMRY Cursos"
+                        "AMRY Cursos",
+                        senhaService.gerarHash("admin123")
                 )));
     }
 
     private void garantirParticipante(Long alunoId) {
         if (participanteRepository.existsById(alunoId)) {
+            participanteRepository.findById(alunoId).ifPresent(participante -> {
+                if (participante.getSenhaHash() == null || participante.getSenhaHash().isBlank()) {
+                    participante.definirSenhaHash(senhaService.gerarHash("aluno123"));
+                }
+            });
             return;
         }
         String cpf = String.format("%011d", alunoId).substring(0, 11);
         participanteRepository.save(new ParticipanteEntity(
                 "Aluno " + alunoId,
                 "aluno" + alunoId + "@amry.local",
-                cpf
+                cpf,
+                senhaService.gerarHash("aluno123")
         ));
     }
 

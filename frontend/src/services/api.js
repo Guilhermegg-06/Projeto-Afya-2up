@@ -6,7 +6,7 @@ import {
     mockPresencas,
 } from "./mockData";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
 
 async function request(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -109,6 +109,7 @@ function normalizarInscricao(inscricao) {
     return {
         id: inscricao.id,
         alunoId: inscricao.alunoId,
+        alunoNome: inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`,
         eventoId: inscricao.eventoId,
         atividadeId: inscricao.atividadeId,
         status: inscricao.status ?? "Inscrito",
@@ -518,4 +519,22 @@ export async function validarCertificado(codigo) {
         fallback,
     );
     return normalizarCertificado(response);
+}
+
+export async function loginUsuario(payload) {
+    return request("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function cadastrarAluno(payload) {
+    return request("/auth/cadastro", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export function urlImagemCertificado(codigo) {
+    return `${API_BASE_URL}/certificados/validar/${encodeURIComponent(codigo)}/imagem`;
 }

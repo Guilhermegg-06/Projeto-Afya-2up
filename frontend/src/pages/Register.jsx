@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BadgeCheck, GraduationCap, ShieldCheck, Sparkles } from "lucide-react";
+import { cadastrarAluno } from "../services/api";
 
 const benefits = [
     "Acesso aos eventos e minicursos",
@@ -9,12 +11,47 @@ const benefits = [
 
 export default function Register() {
     const navigate = useNavigate();
+    const [form, setForm] = useState({
+        nome: "",
+        email: "",
+        cpf: "",
+        senha: "",
+    });
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    function handleRegister(event) {
+    function updateField(field, value) {
+        setForm((current) => ({ ...current, [field]: value }));
+    }
+
+    async function handleRegister(event) {
         event.preventDefault();
 
-        // Temporario: depois sera integrado com o backend Java
-        navigate("/");
+        if (!form.nome.trim() || !form.email.trim() || !form.cpf.trim() || !form.senha.trim()) {
+            setMessage("Preencha todos os campos.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setMessage("");
+            await cadastrarAluno(form);
+            setMessage("Cadastro criado. Agora faca login com seu e-mail e senha.");
+            setTimeout(() => navigate("/"), 900);
+        } catch (error) {
+            if (error.status === 409) {
+                setMessage("E-mail ou CPF ja cadastrado.");
+                return;
+            }
+            if (error.status === 400) {
+                setMessage("Confira os dados: CPF com 11 digitos e senha com no minimo 6 caracteres.");
+                return;
+            }
+
+            setMessage("Nao foi possivel cadastrar agora.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -67,26 +104,52 @@ export default function Register() {
                     <form className="form auth-form" onSubmit={handleRegister}>
                         <label className="field">
                             <span>Nome completo</span>
-                            <input className="input" type="text" placeholder="Seu nome completo" />
+                            <input
+                                className="input"
+                                type="text"
+                                placeholder="Seu nome completo"
+                                value={form.nome}
+                                onChange={(event) => updateField("nome", event.target.value)}
+                            />
                         </label>
 
                         <label className="field">
                             <span>E-mail</span>
-                            <input className="input" type="email" placeholder="seuemail@dominio.com" />
+                            <input
+                                className="input"
+                                type="email"
+                                placeholder="seuemail@dominio.com"
+                                value={form.email}
+                                onChange={(event) => updateField("email", event.target.value)}
+                            />
                         </label>
 
                         <label className="field">
-                            <span>Matricula</span>
-                            <input className="input" type="text" placeholder="00000000" />
+                            <span>CPF</span>
+                            <input
+                                className="input"
+                                type="text"
+                                placeholder="00000000000"
+                                value={form.cpf}
+                                onChange={(event) => updateField("cpf", event.target.value)}
+                            />
                         </label>
 
                         <label className="field">
                             <span>Senha</span>
-                            <input className="input" type="password" placeholder="Crie uma senha" />
+                            <input
+                                className="input"
+                                type="password"
+                                placeholder="Crie uma senha"
+                                value={form.senha}
+                                onChange={(event) => updateField("senha", event.target.value)}
+                            />
                         </label>
 
-                        <button className="btn btn-primary auth-submit" type="submit">
-                            Cadastrar conta
+                        {message ? <p>{message}</p> : null}
+
+                        <button className="btn btn-primary auth-submit" type="submit" disabled={loading}>
+                            {loading ? "Cadastrando..." : "Cadastrar conta"}
                         </button>
 
                         <button

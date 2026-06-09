@@ -5,14 +5,16 @@ CREATE TABLE IF NOT EXISTS coordenadores (
     id           SERIAL PRIMARY KEY,
     nome         VARCHAR(150) NOT NULL,
     email        VARCHAR(255) NOT NULL UNIQUE,
-    instituicao  VARCHAR(200)
+    instituicao  VARCHAR(200),
+    senha_hash   VARCHAR(64)
 );
 
 CREATE TABLE IF NOT EXISTS participantes (
     id     SERIAL PRIMARY KEY,
     nome   VARCHAR(150) NOT NULL,
     email  VARCHAR(255) NOT NULL UNIQUE,
-    cpf    CHAR(11) NOT NULL UNIQUE
+    cpf    CHAR(11) NOT NULL UNIQUE,
+    senha_hash VARCHAR(64)
 );
 
 CREATE TABLE IF NOT EXISTS eventos (
@@ -88,3 +90,6 @@ CREATE TABLE IF NOT EXISTS certificados (
 ALTER TABLE IF EXISTS eventos DROP CONSTRAINT IF EXISTS eventos_status_check;
 ALTER TABLE IF EXISTS atividades DROP CONSTRAINT IF EXISTS atividades_tipo_check;
 ALTER TABLE IF EXISTS inscricoes DROP CONSTRAINT IF EXISTS inscricoes_status_check;
+
+ALTER TABLE IF EXISTS coordenadores ADD COLUMN IF NOT EXISTS senha_hash VARCHAR(64);
+ALTER TABLE IF EXISTS participantes ADD COLUMN IF NOT EXISTS senha_hash VARCHAR(64);

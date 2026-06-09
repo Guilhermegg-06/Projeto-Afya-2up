@@ -4,13 +4,14 @@ import { CalendarDays, CircleX, Ticket, Users } from "lucide-react";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
 import { listarInscricoesDoAluno, removerInscricao } from "../services/api";
+import { alunoIdAtual } from "../services/session";
 
 function formatStatus(value) {
     return value ?? "Inscrito";
 }
 
 export default function MyRegistrations() {
-    const [alunoId, setAlunoId] = useState("1");
+    const [alunoId, setAlunoId] = useState(() => alunoIdAtual());
     const [registrations, setRegistrations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -36,7 +37,7 @@ export default function MyRegistrations() {
 
         (async () => {
             try {
-                const list = await listarInscricoesDoAluno("1");
+                const list = await listarInscricoesDoAluno(alunoIdAtual());
                 if (!cancelled) {
                     setRegistrations(list ?? []);
                 }

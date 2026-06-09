@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, BadgeCheck, BookOpenCheck, GraduationCap, ShieldCheck } from "lucide-react";
+import { loginUsuario } from "../services/api";
+import { salvarUsuario } from "../services/session";
 
 const accessNotes = [
     "Inscricoes com controle de vagas",
@@ -9,10 +12,51 @@ const accessNotes = [
 
 export default function Login() {
     const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+    const [senha, setSenha] = useState("");
+    const [perfilDesejado, setPerfilDesejado] = useState("ALUNO");
+    const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    async function autenticar(perfil) {
+        setPerfilDesejado(perfil);
+
+        if (!email.trim() || !senha.trim()) {
+            setMessage("Informe e-mail e senha.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setMessage("");
+            const usuario = await loginUsuario({ email, senha });
+
+            if (usuario.perfil !== perfil) {
+                setMessage(
+                    perfil === "COORDENADOR"
+                        ? "Este usuario nao e coordenador."
+                        : "Este acesso pertence ao coordenador. Use a entrada de coordenador.",
+                );
+                return;
+            }
+
+            salvarUsuario(usuario);
+            navigate(usuario.perfil === "COORDENADOR" ? "/coordenador" : "/aluno");
+        } catch (error) {
+            if (error.status === 401) {
+                setMessage("E-mail ou senha invalidos.");
+                return;
+            }
+
+            setMessage("Nao foi possivel entrar agora.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     function handleLogin(event) {
         event.preventDefault();
-        navigate("/aluno");
+        autenticar("ALUNO");
     }
 
     return (
@@ -74,22 +118,41 @@ export default function Login() {
                     <form className="login-form" onSubmit={handleLogin}>
                         <label>
                             <span>E-mail</span>
-                            <input type="email" placeholder="seuemail@dominio.com" />
+                            <input
+                                type="email"
+                                placeholder="seuemail@dominio.com"
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
+                            />
                         </label>
 
                         <label>
                             <span>Senha</span>
-                            <input type="password" placeholder="Sua senha" />
+                            <input
+                                type="password"
+                                placeholder="Sua senha"
+                                value={senha}
+                                onChange={(event) => setSenha(event.target.value)}
+                            />
                         </label>
 
-                        <button className="login-submit" type="submit">
-                            Entrar como aluno
+                        {message ? <p>{message}</p> : null}
+
+                        <button
+                            className="login-submit"
+                            type="submit"
+                            disabled={loading}
+                        >
+                            {loading && perfilDesejado === "ALUNO" ? "Entrando..." : "Entrar como aluno"}
                             <ArrowRight size={18} />
                         </button>
                     </form>
 
                     <div className="login-actions">
-                        <button type="button" onClick={() => navigate("/coordenador")}>
+                        <button
+                            type="button"
+                            onClick={() => autenticar("COORDENADOR")}
+                        >
                             Entrar como coordenador
                         </button>
                         <button type="button" onClick={() => navigate("/cadastro")}>

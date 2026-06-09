@@ -66,6 +66,7 @@ public final class ApiDtos {
     public record InscricaoResponse(
             Long id,
             Long alunoId,
+            String alunoNome,
             Long eventoId,
             Long atividadeId,
             String status,
@@ -103,6 +104,28 @@ public final class ApiDtos {
             String atividadeTitulo,
             String codigo,
             Boolean validado
+    ) {
+    }
+
+    public record LoginRequest(
+            String email,
+            String senha
+    ) {
+    }
+
+    public record CadastroRequest(
+            String nome,
+            String email,
+            String cpf,
+            String senha
+    ) {
+    }
+
+    public record UsuarioResponse(
+            Long id,
+            String nome,
+            String email,
+            String perfil
     ) {
     }
 }

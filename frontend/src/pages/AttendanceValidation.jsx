@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { CheckCircle2, ClipboardCheck, ClipboardList, UserRound } from "lucide-react";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
-import { criarPresenca, listarPresencasDaAtividade } from "../services/api";
+import { criarPresenca, listarInscricoesDaAtividade, listarPresencasDaAtividade } from "../services/api";
 
 export default function AttendanceValidation() {
     const [atividadeId, setAtividadeId] = useState("101");
     const [inscricaoId, setInscricaoId] = useState("1");
     const [presente, setPresente] = useState(true);
     const [presencas, setPresencas] = useState([]);
+    const [inscricoes, setInscricoes] = useState([]);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
@@ -25,7 +26,9 @@ export default function AttendanceValidation() {
             setError("");
 
             const list = await listarPresencasDaAtividade(targetAtividadeId);
+            const inscricoesList = await listarInscricoesDaAtividade(targetAtividadeId);
             setPresencas(list ?? []);
+            setInscricoes(inscricoesList ?? []);
         } catch {
             setError("Nao foi possivel carregar as presencas desta atividade.");
         } finally {
@@ -38,9 +41,13 @@ export default function AttendanceValidation() {
 
         (async () => {
             try {
-                const list = await listarPresencasDaAtividade("101");
+                const [list, inscricoesList] = await Promise.all([
+                    listarPresencasDaAtividade("101"),
+                    listarInscricoesDaAtividade("101"),
+                ]);
                 if (!cancelled) {
                     setPresencas(list ?? []);
+                    setInscricoes(inscricoesList ?? []);
                 }
             } catch {
                 if (!cancelled) {
@@ -77,6 +84,21 @@ export default function AttendanceValidation() {
             await loadPresencas(atividadeId);
         } catch {
             setMessage("Nao foi possivel registrar a presenca.");
+        }
+    }
+
+    async function marcarPresenca(inscricao, presenteValor) {
+        try {
+            setMessage("");
+            await criarPresenca({
+                atividadeId: Number(atividadeId),
+                inscricaoId: inscricao.id,
+                presente: presenteValor,
+            });
+            setMessage(`Presenca atualizada para ${inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`}.`);
+            await loadPresencas(atividadeId);
+        } catch {
+            setMessage("Nao foi possivel atualizar a presenca desta inscricao.");
         }
     }
 
@@ -144,6 +166,58 @@ export default function AttendanceValidation() {
 
                 {message ? <p style={{ marginTop: 16 }}>{message}</p> : null}
                 {error ? <p style={{ marginTop: 16 }}>{error}</p> : null}
+            </section>
+
+            <section style={{ marginTop: 24 }}>
+                <div className="section-heading">
+                    <div>
+                        <span className="section-heading__eyebrow">
+                            <ClipboardList size={16} />
+                            Inscricoes da atividade
+                        </span>
+                        <h2>Marcar presenca por aluno</h2>
+                    </div>
+                    <p>
+                        O coordenador escolhe uma atividade, confere as inscricoes reais
+                        e marca cada aluno como presente ou ausente.
+                    </p>
+                </div>
+
+                {loading ? null : inscricoes.length === 0 ? (
+                    <div className="card">Nenhuma inscricao encontrada para esta atividade.</div>
+                ) : (
+                    <div className="events-list">
+                        {inscricoes.map((inscricao) => (
+                            <article className="event-card" key={inscricao.id}>
+                                <div className="event-card__header">
+                                    <span className="event-chip">Inscricao #{inscricao.id}</span>
+                                    <span className="event-date">{inscricao.presenca}</span>
+                                </div>
+                                <h3>{inscricao.alunoNome ?? `Aluno ${inscricao.alunoId}`}</h3>
+                                <p>Atividade {inscricao.atividadeId}</p>
+                                <div className="event-card__footer">
+                                    <strong>{inscricao.status}</strong>
+                                    <div className="event-card__actions">
+                                        <button
+                                            className="btn btn-primary"
+                                            type="button"
+                                            onClick={() => marcarPresenca(inscricao, true)}
+                                        >
+                                            Presente
+                                        </button>
+                                        <button
+                                            className="btn btn-secondary"
+                                            type="button"
+                                            onClick={() => marcarPresenca(inscricao, false)}
+                                        >
+                                            Ausente
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
             </section>
 
             <section style={{ marginTop: 24 }}>

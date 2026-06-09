@@ -2,7 +2,10 @@ package br.com.afya.eventos.controller;
 
 import br.com.afya.eventos.dto.ApiDtos.CertificadoGerarRequest;
 import br.com.afya.eventos.dto.ApiDtos.CertificadoResponse;
+import br.com.afya.eventos.service.CertificadoImagemService;
 import br.com.afya.eventos.service.CatalogoAcademicoService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,9 +22,11 @@ import java.util.List;
 public class CertificadoController {
 
     private final CatalogoAcademicoService service;
+    private final CertificadoImagemService certificadoImagemService;
 
-    public CertificadoController(CatalogoAcademicoService service) {
+    public CertificadoController(CatalogoAcademicoService service, CertificadoImagemService certificadoImagemService) {
         this.service = service;
+        this.certificadoImagemService = certificadoImagemService;
     }
 
     @PostMapping("/certificados/gerar")
@@ -34,6 +39,15 @@ public class CertificadoController {
     public ResponseEntity<CertificadoResponse> validarCertificado(@PathVariable String codigo) {
         CertificadoResponse certificado = service.validarCertificado(codigo);
         return ResponseEntity.ok(certificado);
+    }
+
+    @GetMapping("/certificados/validar/{codigo}/imagem")
+    public ResponseEntity<byte[]> baixarImagemCertificado(@PathVariable String codigo) {
+        byte[] imagem = certificadoImagemService.gerarImagemPorCodigo(codigo);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=certificado-" + codigo + ".png")
+                .body(imagem);
     }
 
     @GetMapping("/alunos/{alunoId}/certificados")
