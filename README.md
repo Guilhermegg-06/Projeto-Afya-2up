@@ -135,7 +135,8 @@ Controllers REST, DTOs e configuração CORS
 
 - **Frontend:** Vercel — `https://cursos-amry.vercel.app`
 - **Backend:** Render via Docker
-
+- **Bando de dados** supabase
+  
 ## 👥 Integrantes
 
 | Nome | GitHub |
