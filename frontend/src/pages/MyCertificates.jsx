@@ -126,8 +126,8 @@ export default function MyCertificates() {
 
                 <h1>Meus certificados</h1>
                 <p>
-                    A listagem abaixo vem de `/api/alunos/{alunoId}/certificados` e a
-                    validacao usa `/api/certificados/validar/{codigo}`.
+                    Consulte certificados emitidos, valide codigos e abra a imagem oficial
+                    quando precisar comprovar participacao.
                 </p>
 
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -219,7 +219,7 @@ export default function MyCertificates() {
                         <h2>Certificados vinculados</h2>
                     </div>
                     <p>
-                        O backend devolve o codigo de validacao para cada certificado emitido.
+                        Cada certificado possui um codigo unico para consulta e comprovacao.
                     </p>
                 </div>
 

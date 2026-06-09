@@ -16,7 +16,7 @@ import FavoriteToggle from "../components/FavoriteToggle";
 import Loader from "../components/Loader";
 import SearchInput from "../components/SearchInput";
 import { readFavorites, updateFavorite } from "../services/favorites";
-import { listarEventos, obterEvento } from "../services/api";
+import { listarEventos } from "../services/api";
 
 const EVENT_FAVORITES_KEY = "afya:favoritos:eventos";
 
@@ -91,7 +91,7 @@ export default function Events() {
                 setLoading(true);
                 setError("");
 
-                const [list, featured] = await Promise.all([listarEventos(), obterEvento(1)]);
+                const list = await listarEventos();
 
                 if (!active) {
                     return;
@@ -99,7 +99,7 @@ export default function Events() {
 
                 const normalizedList = normalizeEventList(list);
                 setEvents(normalizedList);
-                setFeaturedEvent(normalizeEvent(featured) ?? normalizedList[0] ?? null);
+                setFeaturedEvent(normalizedList[0] ?? null);
             } catch {
                 if (active) {
                     setError("Nao foi possivel carregar a programacao no momento.");

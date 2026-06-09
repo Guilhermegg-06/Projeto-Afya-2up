@@ -7,6 +7,7 @@ import {
 } from "./mockData";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api";
+const USE_MOCK_FALLBACK = import.meta.env.DEV || import.meta.env.VITE_USE_MOCKS === "true";
 
 async function request(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -34,6 +35,10 @@ async function withFallback(loader, fallbackValue) {
     try {
         return await loader();
     } catch (error) {
+        if (!USE_MOCK_FALLBACK) {
+            throw error;
+        }
+
         if (error && Object.prototype.hasOwnProperty.call(error, "status")) {
             throw error;
         }
@@ -146,68 +151,6 @@ function normalizarCertificado(certificado) {
     };
 }
 
-function atualizarMockEvento(evento) {
-    const index = mockEventos.findIndex((item) => Number(item.id) === Number(evento.id));
-
-    if (index >= 0) {
-        mockEventos[index] = { ...mockEventos[index], ...evento };
-        return;
-    }
-
-    mockEventos.push(evento);
-}
-
-function atualizarMockAtividade(atividade) {
-    const eventoId = Number(atividade.eventoId);
-
-    if (!mockAtividadesPorEvento[eventoId]) {
-        mockAtividadesPorEvento[eventoId] = [];
-    }
-
-    const lista = mockAtividadesPorEvento[eventoId];
-    const index = lista.findIndex((item) => Number(item.id) === Number(atividade.id));
-
-    if (index >= 0) {
-        lista[index] = { ...lista[index], ...atividade };
-        return;
-    }
-
-    lista.push(atividade);
-}
-
-function removerMockAtividade(atividadeId) {
-    Object.keys(mockAtividadesPorEvento).forEach((key) => {
-        mockAtividadesPorEvento[key] = mockAtividadesPorEvento[key].filter(
-            (item) => Number(item.id) !== Number(atividadeId),
-        );
-    });
-}
-
-function removerMockInscricao(inscricaoId) {
-    const index = mockInscricoes.findIndex((item) => Number(item.id) === Number(inscricaoId));
-    if (index >= 0) {
-        mockInscricoes.splice(index, 1);
-    }
-}
-
-function removerMockPresenca(inscricaoId) {
-    const index = mockPresencas.findIndex((item) => Number(item.inscricaoId) === Number(inscricaoId));
-    if (index >= 0) {
-        mockPresencas.splice(index, 1);
-    }
-}
-
-function atualizarOuAdicionarCertificado(certificado) {
-    const index = mockCertificados.findIndex((item) => item.codigo === certificado.codigo);
-
-    if (index >= 0) {
-        mockCertificados[index] = { ...mockCertificados[index], ...certificado };
-        return;
-    }
-
-    mockCertificados.push(certificado);
-}
-
 export async function listarEventos() {
     const fallback = clone(mockEventos).map(normalizarEvento);
     const response = await withFallback(() => request("/eventos"), fallback);
@@ -223,69 +166,24 @@ export async function obterEvento(id) {
 }
 
 export async function criarEvento(payload) {
-    const fallback = normalizarEvento({
-        id: Date.now(),
-        ocupacao: 0,
-        etiquetas: [],
-        status: "Inscricoes abertas",
-        ...payload,
+    const result = await request("/eventos", {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
-
-    return withFallback(
-        () =>
-            request("/eventos", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarEvento(result);
-        if (normalized) {
-            atualizarMockEvento(normalized);
-        }
-
-        return normalized;
-    });
+    return normalizarEvento(result);
 }
 
 export async function atualizarEvento(id, payload) {
-    const fallback = normalizarEvento({
-        id: Number(id),
-        ocupacao: 0,
-        etiquetas: [],
-        status: "Inscricoes abertas",
-        ...payload,
+    const result = await request(`/eventos/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
     });
-
-    return withFallback(
-        () =>
-            request(`/eventos/${id}`, {
-                method: "PUT",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarEvento(result);
-        if (normalized) {
-            atualizarMockEvento(normalized);
-        }
-
-        return normalized;
-    });
+    return normalizarEvento(result);
 }
 
 export async function deletarEvento(id) {
-    return withFallback(
-        () =>
-            request(`/eventos/${id}`, {
-                method: "DELETE",
-            }),
-        null,
-    ).then(() => {
-        const index = mockEventos.findIndex((evento) => Number(evento.id) === Number(id));
-        if (index >= 0) {
-            mockEventos.splice(index, 1);
-        }
+    await request(`/eventos/${id}`, {
+        method: "DELETE",
     });
 }
 
@@ -310,95 +208,33 @@ export async function obterAtividade(id) {
 }
 
 export async function criarAtividade(eventoId, payload) {
-    const fallback = normalizarAtividade({
-        id: Date.now(),
-        eventoId: Number(eventoId),
-        ocupadas: 0,
-        ...payload,
+    const result = await request(`/eventos/${eventoId}/atividades`, {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
-
-    return withFallback(
-        () =>
-            request(`/eventos/${eventoId}/atividades`, {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarAtividade(result);
-        if (normalized) {
-            atualizarMockAtividade(normalized);
-        }
-
-        return normalized;
-    });
+    return normalizarAtividade(result);
 }
 
 export async function atualizarAtividade(id, payload) {
-    const fallback = normalizarAtividade({
-        id: Number(id),
-        eventoId: payload.eventoId ?? null,
-        ocupadas: 0,
-        ...payload,
+    const result = await request(`/atividades/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
     });
-
-    return withFallback(
-        () =>
-            request(`/atividades/${id}`, {
-                method: "PUT",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarAtividade(result);
-        if (normalized) {
-            atualizarMockAtividade(normalized);
-        }
-
-        return normalized;
-    });
+    return normalizarAtividade(result);
 }
 
 export async function deletarAtividade(id) {
-    return withFallback(
-        () =>
-            request(`/atividades/${id}`, {
-                method: "DELETE",
-            }),
-        null,
-    ).then(() => {
-        removerMockAtividade(id);
+    await request(`/atividades/${id}`, {
+        method: "DELETE",
     });
 }
 
 export async function criarInscricao(payload) {
-    const fallback = {
-        id: Date.now(),
-        ...payload,
-        status: "Inscrito",
-        presenca: "Pendente",
-    };
-
-    return withFallback(
-        () =>
-            request("/inscricoes", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarInscricao(result);
-        if (normalized) {
-            const index = mockInscricoes.findIndex((item) => Number(item.id) === Number(normalized.id));
-            if (index >= 0) {
-                mockInscricoes[index] = normalized;
-            } else {
-                mockInscricoes.push(normalized);
-            }
-        }
-
-        return normalized;
+    const result = await request("/inscricoes", {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
+    return normalizarInscricao(result);
 }
 
 export async function listarInscricoesDoAluno(alunoId) {
@@ -421,45 +257,17 @@ export async function listarInscricoesDaAtividade(atividadeId) {
 }
 
 export async function removerInscricao(id) {
-    return withFallback(
-        () =>
-            request(`/inscricoes/${id}`, {
-                method: "DELETE",
-            }),
-        null,
-    ).then(() => {
-        removerMockInscricao(id);
-        removerMockPresenca(id);
+    await request(`/inscricoes/${id}`, {
+        method: "DELETE",
     });
 }
 
 export async function criarPresenca(payload) {
-    const fallback = {
-        id: Date.now(),
-        ...payload,
-        presente: true,
-    };
-
-    return withFallback(
-        () =>
-            request("/presencas", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarPresenca(result);
-        if (normalized) {
-            const index = mockPresencas.findIndex((item) => Number(item.id) === Number(normalized.id));
-            if (index >= 0) {
-                mockPresencas[index] = normalized;
-            } else {
-                mockPresencas.push(normalized);
-            }
-        }
-
-        return normalized;
+    const result = await request("/presencas", {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
+    return normalizarPresenca(result);
 }
 
 export async function listarPresencasDaAtividade(atividadeId) {
@@ -474,31 +282,11 @@ export async function listarPresencasDaAtividade(atividadeId) {
 }
 
 export async function gerarCertificado(payload) {
-    const fallback = {
-        id: Date.now(),
-        alunoId: payload.alunoId,
-        eventoId: payload.eventoId,
-        atividadeId: payload.atividadeId,
-        atividadeTitulo: payload.atividadeTitulo,
-        codigo: `CERT-${Date.now()}`,
-        validado: true,
-    };
-
-    return withFallback(
-        () =>
-            request("/certificados/gerar", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }),
-        fallback,
-    ).then((result) => {
-        const normalized = normalizarCertificado(result);
-        if (normalized) {
-            atualizarOuAdicionarCertificado(normalized);
-        }
-
-        return normalized;
+    const result = await request("/certificados/gerar", {
+        method: "POST",
+        body: JSON.stringify(payload),
     });
+    return normalizarCertificado(result);
 }
 
 export async function listarCertificadosDoAluno(alunoId) {

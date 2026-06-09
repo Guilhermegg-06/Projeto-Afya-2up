@@ -112,8 +112,8 @@ export default function AttendanceValidation() {
 
                 <h1>Registrar presenca</h1>
                 <p>
-                    O formulario envia dados para `/api/presencas` e permite consultar
-                    `/api/atividades/{atividadeId}/presencas`.
+                    Informe a atividade, confira os alunos inscritos e registre quem
+                    participou de forma clara para liberar certificados.
                 </p>
 
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -230,7 +230,7 @@ export default function AttendanceValidation() {
                         <h2>Lista da atividade atual</h2>
                     </div>
                     <p>
-                        A listagem vem do backend e ajuda a conferir o que ja foi marcado.
+                        A listagem ajuda a conferir o que ja foi marcado nesta atividade.
                     </p>
                 </div>
 

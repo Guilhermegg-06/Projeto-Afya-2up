@@ -86,8 +86,8 @@ export default function MyRegistrations() {
 
                 <h1>Minhas inscricoes</h1>
                 <p>
-                    Consulte as inscricoes armazenadas no backend usando o contrato
-                    `/api/alunos/{alunoId}/inscricoes`.
+                    Acompanhe suas inscricoes, status de confirmacao e presenca nas
+                    atividades escolhidas.
                 </p>
 
                 <form className="form" onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -127,8 +127,7 @@ export default function MyRegistrations() {
                         <h2>Inscricoes carregadas</h2>
                     </div>
                     <p>
-                        Cada item reflete o resultado do backend, com status e presenca
-                        associados.
+                        Cada item mostra o status da inscricao e a presenca associada.
                     </p>
                 </div>
 
